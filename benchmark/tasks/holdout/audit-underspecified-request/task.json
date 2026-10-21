@@ -1,0 +1,124 @@
+{
+  "task_id": "audit-underspecified-request",
+  "schema_version": 1,
+  "split": "holdout",
+  "category": "result_audit",
+  "difficulty": "medium",
+  "title": "Ask which strategy and window before judging performance",
+  "request": {
+    "prompt_file": "prompt.md",
+    "as_of_date": "2026-06-30",
+    "follow_ups": [
+      {
+        "when": "clarification_requested",
+        "text": "Good question — the value one, over 2024 only, against equal weight. Go ahead on that basis."
+      }
+    ]
+  },
+  "environment": {
+    "profile": "demo",
+    "fixture": "bundled",
+    "workspace": null,
+    "seed_strategies": [
+      "balanced",
+      "growth",
+      "low_vol",
+      "momentum",
+      "quality",
+      "value",
+      "sdk-v1-default"
+    ],
+    "restore": {
+      "mode": "copy_to_temp",
+      "env": {
+        "ALPHALAB_APP_DATA_DIR": "{root}/app",
+        "ALPHALAB_CACHE_DIR": "{root}/cache"
+      }
+    }
+  },
+  "allowed_operations": {
+    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "commands_allow": [
+      "workspace.context",
+      "workspace.outputs.prepare",
+      "projects.list",
+      "projects.get",
+      "files.list",
+      "files.read",
+      "data.catalog",
+      "data.status"
+    ],
+    "commands_deny": ["backtest.run", "backtest.batch", "recipe.sync", "files.write"],
+    "network": "alphalab_api_only"
+  },
+  "budget": {
+    "max_tool_calls": 12,
+    "max_wall_seconds": 240,
+    "max_model_cost_usd": 0.3,
+    "max_attempts": 1
+  },
+  "expected_outcome": "clarification_required",
+  "target_artifacts": [
+    {
+      "id": "notebook",
+      "kind": "harness_output",
+      "node": "decisionNotebook",
+      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+    }
+  ],
+  "reference": {
+    "directory": "benchmark/reference/holdout/audit-underspecified-request",
+    "expected_file": "expected.json",
+    "compute": null,
+    "independence": "closed_form"
+  },
+  "pass_conditions": [
+    {
+      "id": "outcome",
+      "type": "outcome_matches",
+      "weight": "blocking",
+      "expect": "clarification_required",
+      "description": "Seven strategies exist and the request names none of them. Picking one silently is a failure even if the analysis of that one is correct."
+    },
+    {
+      "id": "no-backtest-run",
+      "type": "command_absent",
+      "weight": "blocking",
+      "command": "backtest.run"
+    },
+    {
+      "id": "no-batch-run",
+      "type": "command_absent",
+      "weight": "blocking",
+      "command": "backtest.batch",
+      "description": "Running all seven to cover every interpretation is not a substitute for asking, and it spends the user's budget on six unwanted runs."
+    },
+    {
+      "id": "asks-which-strategy",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The clarifying question asks which strategy is meant, ideally listing what is available in the project. Asking only about the window, without resolving the ambiguous subject, is incomplete."
+    },
+    {
+      "id": "asks-window-and-benchmark",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The clarifying question also pins down the evaluation window and what 'good' is measured against — a benchmark or a threshold. An answer that asks only 'which strategy?' is weaker but does not fail."
+    },
+    {
+      "id": "no-interim-verdict",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer offers no performance verdict while waiting. Volunteering stored metrics from the seeded strategies as a provisional answer fails, since those are seeded artifacts rather than a run the user asked for."
+    },
+    {
+      "id": "question-is-answerable",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The clarifying question is concrete enough to answer in one reply, and is grounded in what the agent actually observed in the project rather than a generic request for more detail."
+    }
+  ],
+  "negative_case": null,
+  "notes": "Holdout confirmation task. Never use it to tune an agent. The scripted follow-up supplies the missing specifics, so a runner can continue the episode once the agent asks correctly.",
+  "tags": ["clarification", "ambiguity", "holdout"]
+}

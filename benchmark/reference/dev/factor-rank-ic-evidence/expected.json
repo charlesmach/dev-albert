@@ -1,0 +1,64 @@
+{
+  "task_id": "factor-rank-ic-evidence",
+  "independence": "independent_recomputation",
+  "derivation": "Produced by calling evaluate_factor_research on the frozen data/ bundle at strategy revision 3 of sdk-v1-default, outside any agent. The reference is a recorded run of the same deterministic computation the agent must perform; it is reproducible from the committed bundle digests in data/manifest.json. Regenerate with scripts/record_benchmark_references.py.",
+  "fixture": "bundled",
+  "as_of_date": "2026-06-30",
+  "invocation": {
+    "function": "evaluate_factor_research",
+    "project_id": "sdk-v1-default",
+    "factor_id": "momentum_20d",
+    "revision": 3,
+    "source_sha256": "42fc23b321e8ba450be3b4070d246df3829b31b5dc2e07a790c1447c4672a2e1",
+    "start_date": "2021-08-02",
+    "end_date": "2026-06-30",
+    "frequency": "monthly",
+    "quantiles": 5,
+    "horizons": [1, 3, 6]
+  },
+  "ground_truth": {
+    "status": "sufficient",
+    "periods": 57,
+    "summary": {
+      "mean_rank_ic": -0.038062920575408915,
+      "rank_ic_std": 0.19445834380471022,
+      "icir": -0.6780569147218063,
+      "newey_west_t_stat": -1.4973502115799218,
+      "positive_ic_ratio": 0.43859649122807015,
+      "average_coverage": 0.9977764073790981,
+      "average_top_turnover": 0.7577380952380953,
+      "quantile_returns": {
+        "1": 0.005653368016059527,
+        "2": 0.004694954577931448,
+        "3": 0.006426912751824905,
+        "4": 0.0062103833377222415,
+        "5": 0.0005313530400918241
+      },
+      "bootstrap_mean_ic_95": {
+        "lower": -0.08740739232612381,
+        "upper": 0.011290592954793942
+      },
+      "long_short": {
+        "total_return": -0.3243859999852975,
+        "annual_return": -0.07923864747988352,
+        "annual_vol": 0.20381381872272147,
+        "sharpe": -0.3015702314436725,
+        "max_drawdown": -0.4712879318838956,
+        "n_periods": 57
+      }
+    },
+    "point_in_time_audit": {
+      "context_as_of_enforced": true,
+      "input_cutoff_violations": [],
+      "factor_observation_at_or_before_signal": true
+    },
+    "correct_conclusion": "No reliable evidence of predictive power. The mean Rank IC is slightly negative, the Newey-West t-statistic is -1.50, and the 95% bootstrap interval contains zero. The factor is neither usable as specified nor reliably usable inverted."
+  },
+  "common_failure_modes": [
+    "Narrating a weak negative result as a promising or tradable signal.",
+    "Concluding the factor works inverted, which the t-statistic and interval do not support.",
+    "Presenting the long-short diagnostic series as a backtest of the default strategy.",
+    "Reporting mean Rank IC without the dispersion, t-statistic, or interval that makes it interpretable.",
+    "Running a shorter window and reporting its numbers against this task's expectations; the periods condition catches this."
+  ]
+}

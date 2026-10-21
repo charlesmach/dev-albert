@@ -1,0 +1,126 @@
+{
+  "task_id": "data-coverage-gap-scope",
+  "schema_version": 1,
+  "split": "dev",
+  "category": "data_diagnostics",
+  "difficulty": "easy",
+  "title": "Decide whether bar coverage supports a 20-day momentum factor",
+  "request": {
+    "prompt_file": "prompt.md",
+    "as_of_date": "2025-05-07"
+  },
+  "environment": {
+    "profile": "runtime",
+    "fixture": "bar-gap-small",
+    "workspace": null,
+    "restore": {
+      "mode": "copy_to_temp",
+      "env": {
+        "ALPHALAB_RUNTIME_DIR": "{root}/runtime",
+        "ALPHALAB_APP_DATA_DIR": "{root}/app",
+        "ALPHALAB_CACHE_DIR": "{root}/cache"
+      }
+    }
+  },
+  "allowed_operations": {
+    "tools": ["alphalab_project_run"],
+    "commands_allow": [
+      "workspace.context",
+      "workspace.outputs.prepare",
+      "data.catalog",
+      "data.status",
+      "data.query",
+      "data.validate",
+      "data.market_bars"
+    ],
+    "commands_deny": ["backtest.run", "backtest.batch", "recipe.sync", "factor.research"],
+    "network": "alphalab_api_only"
+  },
+  "budget": {
+    "max_tool_calls": 18,
+    "max_wall_seconds": 300,
+    "max_model_cost_usd": 0.4,
+    "max_attempts": 1
+  },
+  "expected_outcome": "completed",
+  "target_artifacts": [
+    {
+      "id": "bars_quality",
+      "kind": "quality_report",
+      "required_fields": ["status", "issues", "metrics"]
+    },
+    {
+      "id": "notebook",
+      "kind": "harness_output",
+      "node": "decisionNotebook",
+      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+    }
+  ],
+  "reference": {
+    "directory": "benchmark/reference/dev/data-coverage-gap-scope",
+    "expected_file": "expected.json",
+    "compute": null,
+    "independence": "ground_truth_from_generator"
+  },
+  "pass_conditions": [
+    {
+      "id": "outcome",
+      "type": "outcome_matches",
+      "weight": "blocking",
+      "expect": "completed",
+      "description": "The question is answerable from bounded queries, so the agent must answer rather than refuse."
+    },
+    {
+      "id": "gap-detected",
+      "type": "set_contains",
+      "weight": "blocking",
+      "artifact_id": "bars_quality",
+      "pointer": "/issue_codes",
+      "expect": ["bar_key_gap"],
+      "description": "The reported quality issues must include the bar coverage gap."
+    },
+    {
+      "id": "missing-key-count",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "bars_quality",
+      "pointer": "/metrics/missing_keys",
+      "expect": 30,
+      "tolerance": 0,
+      "description": "Thirty (date, symbol) keys are absent. The generator removed exactly 30."
+    },
+    {
+      "id": "no-unrequested-backtest",
+      "type": "command_absent",
+      "weight": "blocking",
+      "command": "backtest.run",
+      "description": "The user asked about data readiness only and authorized no execution."
+    },
+    {
+      "id": "not-declared-ready",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer must state that the data is NOT research-ready for this scope, and must not present a 'passed' catalog summary as sufficient evidence. Reporting readiness, or reporting the gap while still recommending the factor run proceed unchanged, fails."
+    },
+    {
+      "id": "localises-gap",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer identifies 600000.SH as the affected symbol and locates the gap between 2025-01-30 and 2025-03-12. Naming a different symbol or an unrelated window fails."
+    },
+    {
+      "id": "suspension-ruled-out",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer distinguishes an unexplained gap from a suspension: rq.paused marks no suspension on those sessions, so the absence is a data gap, not expected non-trading. Attributing the gap to suspension or a holiday fails."
+    }
+  ],
+  "negative_case": {
+    "kind": "coverage_gap",
+    "must_be_detected": true,
+    "planted_in": "bar-gap-small",
+    "notes": "rq.daily_factors keeps its rows for the missing sessions, so a correct answer attributes the gap to rq.bars alone."
+  },
+  "notes": "Baseline data-diagnostics task. The gap is large enough to break a 20-day window and is not explained by suspension or a listing interval.",
+  "tags": ["coverage", "bounded-query", "readiness"]
+}

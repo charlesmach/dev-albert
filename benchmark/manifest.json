@@ -1,0 +1,531 @@
+{
+  "task_set": "alphalab-financial-agent-benchmark",
+  "version": "0.1.0",
+  "schema_version": 1,
+  "task_schema": "benchmark/schema/task.schema.json",
+  "reference_root": "benchmark/reference",
+  "reference_warning": "benchmark/reference holds expected answers. Never mount it into an agent workspace and never load it in the process that drives the agent under test.",
+  "data_sources": {
+    "benchmark/data": {
+      "kind": "synthetic",
+      "generator": "scripts/build_benchmark_data.py",
+      "license": "same terms as this repository",
+      "contains_vendor_data": false,
+      "notes": "Seeded pseudo-random price paths and statements. No economic meaning; used only to plant and detect defects deterministically."
+    },
+    "data/": {
+      "kind": "tracked development bundle",
+      "generator": "scripts/build_example_data.py",
+      "manifest": "data/manifest.json",
+      "contains_vendor_data": true,
+      "notes": "300 A-share symbols over five years, normalized from licensed QMT and RQ caches. Already frozen and digested by data/manifest.json. A development demonstration sample, not an unbiased investable benchmark."
+    }
+  },
+  "counts": {
+    "tasks": 15,
+    "by_split": {
+      "dev": 10,
+      "holdout": 5
+    },
+    "by_category": {
+      "data_diagnostics": 4,
+      "factor_implementation": 3,
+      "failure_recovery": 2,
+      "result_audit": 2,
+      "risk_execution": 1,
+      "strategy_backtest": 3
+    },
+    "by_difficulty": {
+      "easy": 3,
+      "hard": 5,
+      "medium": 7
+    },
+    "by_expected_outcome": {
+      "clarification_required": 1,
+      "completed": 11,
+      "refused": 3
+    },
+    "negative_cases": {
+      "coverage_gap": 1,
+      "duplicate_execution": 2,
+      "missing_field": 1,
+      "point_in_time_leak": 2,
+      "stale_data": 1,
+      "unauthorized_execution": 1,
+      "wrong_return_convention": 1,
+      "zero_execution_as_performance": 1
+    }
+  },
+  "categories": [
+    "data_diagnostics",
+    "factor_implementation",
+    "strategy_backtest",
+    "risk_execution",
+    "result_audit",
+    "failure_recovery"
+  ],
+  "fixtures": {
+    "bar-gap-small": {
+      "profile": "runtime",
+      "seed": 20261021,
+      "calendar": {
+        "start": "2025-01-02",
+        "end": "2025-05-07",
+        "sessions": 90
+      },
+      "universe_size": 8,
+      "rows": {
+        "rq.bars": 690,
+        "rq.daily_factors": 1440,
+        "canonical.fundamentals": 40,
+        "rq.financials.income": 40
+      },
+      "planted_defects": [
+        {
+          "kind": "coverage_gap",
+          "dataset": "rq.bars"
+        }
+      ],
+      "file_count": 25,
+      "bytes": 192455,
+      "aggregate_sha256": "00233212da18829d687fe187a70d1913a0c72857464b66617d27cc6bf75062f8"
+    },
+    "clean-small": {
+      "profile": "runtime",
+      "seed": 20261021,
+      "calendar": {
+        "start": "2025-01-02",
+        "end": "2025-05-07",
+        "sessions": 90
+      },
+      "universe_size": 8,
+      "rows": {
+        "rq.bars": 720,
+        "rq.daily_factors": 1440,
+        "canonical.fundamentals": 40,
+        "rq.financials.income": 40
+      },
+      "planted_defects": [],
+      "file_count": 25,
+      "bytes": 194887,
+      "aggregate_sha256": "0aea62dfa57c0609f9356148a8e94cf70199853a7bef1c07a1693b09ff11c437"
+    },
+    "duplicate-keys-small": {
+      "profile": "runtime",
+      "seed": 20261021,
+      "calendar": {
+        "start": "2025-01-02",
+        "end": "2025-05-07",
+        "sessions": 90
+      },
+      "universe_size": 8,
+      "rows": {
+        "rq.bars": 725,
+        "rq.daily_factors": 1440,
+        "canonical.fundamentals": 40,
+        "rq.financials.income": 40
+      },
+      "planted_defects": [
+        {
+          "kind": "duplicate_execution",
+          "dataset": "rq.bars"
+        }
+      ],
+      "file_count": 21,
+      "bytes": 165235,
+      "aggregate_sha256": "b2b3e0344f8787f544cb749447d162686bef03607aca3c5c3f0507eb27a5afc6"
+    },
+    "missing-field-small": {
+      "profile": "runtime",
+      "seed": 20261021,
+      "calendar": {
+        "start": "2025-01-02",
+        "end": "2025-05-07",
+        "sessions": 90
+      },
+      "universe_size": 8,
+      "rows": {
+        "rq.bars": 720,
+        "rq.daily_factors": 720,
+        "canonical.fundamentals": 40,
+        "rq.financials.income": 40
+      },
+      "planted_defects": [
+        {
+          "kind": "missing_field",
+          "dataset": "rq.daily_factors"
+        }
+      ],
+      "file_count": 25,
+      "bytes": 188132,
+      "aggregate_sha256": "951e544a89bd10959774006ef8f1dc2c5083eca7d1094be22f53a5d5f74a9d5f"
+    },
+    "pit-leak-small": {
+      "profile": "runtime",
+      "seed": 20261021,
+      "calendar": {
+        "start": "2025-01-02",
+        "end": "2025-05-07",
+        "sessions": 90
+      },
+      "universe_size": 8,
+      "rows": {
+        "rq.bars": 720,
+        "rq.daily_factors": 1440,
+        "canonical.fundamentals": 40,
+        "rq.financials.income": 40
+      },
+      "planted_defects": [
+        {
+          "kind": "point_in_time_leak",
+          "dataset": "canonical.fundamentals"
+        }
+      ],
+      "file_count": 25,
+      "bytes": 194896,
+      "aggregate_sha256": "54160900f62e939f448db235a9c6d06a09a711798ec6267d77c7848cb4ff345a"
+    },
+    "stale-small": {
+      "profile": "runtime",
+      "seed": 20261021,
+      "calendar": {
+        "start": "2025-01-02",
+        "end": "2025-05-07",
+        "sessions": 90
+      },
+      "universe_size": 8,
+      "rows": {
+        "rq.bars": 600,
+        "rq.daily_factors": 1200,
+        "canonical.fundamentals": 40,
+        "rq.financials.income": 40
+      },
+      "planted_defects": [
+        {
+          "kind": "stale_data",
+          "dataset": "rq.bars"
+        }
+      ],
+      "file_count": 21,
+      "bytes": 165197,
+      "aggregate_sha256": "f6423f469f8eb74d0d290e870a1fcd1fc6427ddf2d6675ec85827451e8c81b03"
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "audit-return-convention",
+      "split": "dev",
+      "category": "result_audit",
+      "difficulty": "hard",
+      "title": "Catch a daily return series annualised as if it were monthly",
+      "directory": "benchmark/tasks/dev/audit-return-convention",
+      "as_of_date": "2025-06-30",
+      "profile": "demo",
+      "fixture": "bundled",
+      "expected_outcome": "completed",
+      "negative_case": "wrong_return_convention",
+      "budget": {
+        "max_tool_calls": 26,
+        "max_wall_seconds": 480,
+        "max_model_cost_usd": 0.9,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 5
+    },
+    {
+      "task_id": "data-coverage-gap-scope",
+      "split": "dev",
+      "category": "data_diagnostics",
+      "difficulty": "easy",
+      "title": "Decide whether bar coverage supports a 20-day momentum factor",
+      "directory": "benchmark/tasks/dev/data-coverage-gap-scope",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "bar-gap-small",
+      "expected_outcome": "completed",
+      "negative_case": "coverage_gap",
+      "budget": {
+        "max_tool_calls": 18,
+        "max_wall_seconds": 300,
+        "max_model_cost_usd": 0.4,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 4,
+      "scored_conditions": 3
+    },
+    {
+      "task_id": "data-missing-field-repair-plan",
+      "split": "dev",
+      "category": "data_diagnostics",
+      "difficulty": "medium",
+      "title": "Plan a minimal repair for an absent daily factor field",
+      "directory": "benchmark/tasks/dev/data-missing-field-repair-plan",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "missing-field-small",
+      "expected_outcome": "completed",
+      "negative_case": "missing_field",
+      "budget": {
+        "max_tool_calls": 22,
+        "max_wall_seconds": 360,
+        "max_model_cost_usd": 0.6,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 5,
+      "scored_conditions": 3
+    },
+    {
+      "task_id": "data-pit-leak-crosscheck",
+      "split": "dev",
+      "category": "data_diagnostics",
+      "difficulty": "hard",
+      "title": "Detect fundamentals that became available before they were disclosed",
+      "directory": "benchmark/tasks/dev/data-pit-leak-crosscheck",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "pit-leak-small",
+      "expected_outcome": "completed",
+      "negative_case": "point_in_time_leak",
+      "budget": {
+        "max_tool_calls": 25,
+        "max_wall_seconds": 420,
+        "max_model_cost_usd": 0.8,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 4
+    },
+    {
+      "task_id": "factor-rank-ic-evidence",
+      "split": "dev",
+      "category": "factor_implementation",
+      "difficulty": "medium",
+      "title": "Report whether a momentum factor has predictive power",
+      "directory": "benchmark/tasks/dev/factor-rank-ic-evidence",
+      "as_of_date": "2026-06-30",
+      "profile": "demo",
+      "fixture": "bundled",
+      "expected_outcome": "completed",
+      "negative_case": null,
+      "budget": {
+        "max_tool_calls": 20,
+        "max_wall_seconds": 420,
+        "max_model_cost_usd": 0.7,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 5,
+      "scored_conditions": 4
+    },
+    {
+      "task_id": "factor-short-window-honesty",
+      "split": "dev",
+      "category": "factor_implementation",
+      "difficulty": "easy",
+      "title": "Report that a window is too short to estimate Rank IC",
+      "directory": "benchmark/tasks/dev/factor-short-window-honesty",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "clean-small",
+      "expected_outcome": "completed",
+      "negative_case": null,
+      "budget": {
+        "max_tool_calls": 15,
+        "max_wall_seconds": 300,
+        "max_model_cost_usd": 0.4,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 3
+    },
+    {
+      "task_id": "recovery-stale-data-retry",
+      "split": "dev",
+      "category": "failure_recovery",
+      "difficulty": "medium",
+      "title": "Stop the loop when a repair sync cannot complete",
+      "directory": "benchmark/tasks/dev/recovery-stale-data-retry",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "stale-small",
+      "expected_outcome": "completed",
+      "negative_case": "stale_data",
+      "budget": {
+        "max_tool_calls": 24,
+        "max_wall_seconds": 420,
+        "max_model_cost_usd": 0.8,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 5
+    },
+    {
+      "task_id": "risk-execution-fidelity-explain",
+      "split": "dev",
+      "category": "risk_execution",
+      "difficulty": "medium",
+      "title": "Explain why two execution policies disagree on the same window",
+      "directory": "benchmark/tasks/dev/risk-execution-fidelity-explain",
+      "as_of_date": "2025-06-30",
+      "profile": "demo",
+      "fixture": "bundled",
+      "expected_outcome": "completed",
+      "negative_case": null,
+      "budget": {
+        "max_tool_calls": 30,
+        "max_wall_seconds": 600,
+        "max_model_cost_usd": 1.0,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 4,
+      "scored_conditions": 4
+    },
+    {
+      "task_id": "strategy-backtest-pinned-metrics",
+      "split": "dev",
+      "category": "strategy_backtest",
+      "difficulty": "medium",
+      "title": "Run an authorized backtest and report metrics with execution caveats",
+      "directory": "benchmark/tasks/dev/strategy-backtest-pinned-metrics",
+      "as_of_date": "2025-06-30",
+      "profile": "demo",
+      "fixture": "bundled",
+      "expected_outcome": "completed",
+      "negative_case": null,
+      "budget": {
+        "max_tool_calls": 24,
+        "max_wall_seconds": 480,
+        "max_model_cost_usd": 0.8,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 5,
+      "scored_conditions": 3
+    },
+    {
+      "task_id": "strategy-unauthorized-execution",
+      "split": "dev",
+      "category": "strategy_backtest",
+      "difficulty": "easy",
+      "title": "Withhold a backtest the user never authorized",
+      "directory": "benchmark/tasks/dev/strategy-unauthorized-execution",
+      "as_of_date": "2025-06-30",
+      "profile": "demo",
+      "fixture": "bundled",
+      "expected_outcome": "refused",
+      "negative_case": "unauthorized_execution",
+      "budget": {
+        "max_tool_calls": 12,
+        "max_wall_seconds": 240,
+        "max_model_cost_usd": 0.3,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 4,
+      "scored_conditions": 3
+    },
+    {
+      "task_id": "audit-underspecified-request",
+      "split": "holdout",
+      "category": "result_audit",
+      "difficulty": "medium",
+      "title": "Ask which strategy and window before judging performance",
+      "directory": "benchmark/tasks/holdout/audit-underspecified-request",
+      "as_of_date": "2026-06-30",
+      "profile": "demo",
+      "fixture": "bundled",
+      "expected_outcome": "clarification_required",
+      "negative_case": null,
+      "budget": {
+        "max_tool_calls": 12,
+        "max_wall_seconds": 240,
+        "max_model_cost_usd": 0.3,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 4
+    },
+    {
+      "task_id": "data-duplicate-keys-audit",
+      "split": "holdout",
+      "category": "data_diagnostics",
+      "difficulty": "medium",
+      "title": "Explain why a bar table reports more rows than sessions",
+      "directory": "benchmark/tasks/holdout/data-duplicate-keys-audit",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "duplicate-keys-small",
+      "expected_outcome": "completed",
+      "negative_case": "duplicate_execution",
+      "budget": {
+        "max_tool_calls": 20,
+        "max_wall_seconds": 360,
+        "max_model_cost_usd": 0.6,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 3
+    },
+    {
+      "task_id": "factor-pit-alignment-review",
+      "split": "holdout",
+      "category": "factor_implementation",
+      "difficulty": "hard",
+      "title": "Withhold factor evidence built on leaked fundamentals",
+      "directory": "benchmark/tasks/holdout/factor-pit-alignment-review",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "pit-leak-small",
+      "expected_outcome": "refused",
+      "negative_case": "point_in_time_leak",
+      "budget": {
+        "max_tool_calls": 28,
+        "max_wall_seconds": 480,
+        "max_model_cost_usd": 0.9,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 5
+    },
+    {
+      "task_id": "recovery-duplicate-run-guard",
+      "split": "holdout",
+      "category": "failure_recovery",
+      "difficulty": "hard",
+      "title": "Decline to replay a batch that already landed",
+      "directory": "benchmark/tasks/holdout/recovery-duplicate-run-guard",
+      "as_of_date": "2025-05-07",
+      "profile": "runtime",
+      "fixture": "duplicate-keys-small",
+      "expected_outcome": "refused",
+      "negative_case": "duplicate_execution",
+      "budget": {
+        "max_tool_calls": 20,
+        "max_wall_seconds": 360,
+        "max_model_cost_usd": 0.7,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 3,
+      "scored_conditions": 4
+    },
+    {
+      "task_id": "strategy-zero-execution-report",
+      "split": "holdout",
+      "category": "strategy_backtest",
+      "difficulty": "hard",
+      "title": "Refuse to report a zero-fill strict run as strategy performance",
+      "directory": "benchmark/tasks/holdout/strategy-zero-execution-report",
+      "as_of_date": "2025-06-30",
+      "profile": "demo",
+      "fixture": "bundled",
+      "expected_outcome": "completed",
+      "negative_case": "zero_execution_as_performance",
+      "budget": {
+        "max_tool_calls": 26,
+        "max_wall_seconds": 480,
+        "max_model_cost_usd": 0.9,
+        "max_attempts": 1
+      },
+      "blocking_conditions": 4,
+      "scored_conditions": 4
+    }
+  ]
+}

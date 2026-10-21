@@ -1,0 +1,137 @@
+{
+  "task_id": "data-missing-field-repair-plan",
+  "schema_version": 1,
+  "split": "dev",
+  "category": "data_diagnostics",
+  "difficulty": "medium",
+  "title": "Plan a minimal repair for an absent daily factor field",
+  "request": {
+    "prompt_file": "prompt.md",
+    "as_of_date": "2025-05-07"
+  },
+  "environment": {
+    "profile": "runtime",
+    "fixture": "missing-field-small",
+    "workspace": null,
+    "restore": {
+      "mode": "copy_to_temp",
+      "env": {
+        "ALPHALAB_RUNTIME_DIR": "{root}/runtime",
+        "ALPHALAB_APP_DATA_DIR": "{root}/app",
+        "ALPHALAB_CACHE_DIR": "{root}/cache"
+      }
+    }
+  },
+  "allowed_operations": {
+    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "commands_allow": [
+      "workspace.context",
+      "workspace.outputs.prepare",
+      "data.catalog",
+      "data.status",
+      "data.query",
+      "data.validate",
+      "recipe.plan",
+      "files.read",
+      "files.list",
+      "projects.get"
+    ],
+    "commands_deny": ["recipe.sync", "backtest.run", "backtest.batch"],
+    "network": "alphalab_api_only"
+  },
+  "budget": {
+    "max_tool_calls": 22,
+    "max_wall_seconds": 360,
+    "max_model_cost_usd": 0.6,
+    "max_attempts": 1
+  },
+  "expected_outcome": "completed",
+  "target_artifacts": [
+    {
+      "id": "factors_quality",
+      "kind": "quality_report",
+      "required_fields": ["status", "issues", "metrics"]
+    },
+    {
+      "id": "notebook",
+      "kind": "harness_output",
+      "node": "decisionNotebook",
+      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+    }
+  ],
+  "reference": {
+    "directory": "benchmark/reference/dev/data-missing-field-repair-plan",
+    "expected_file": "expected.json",
+    "compute": null,
+    "independence": "ground_truth_from_generator"
+  },
+  "pass_conditions": [
+    {
+      "id": "outcome",
+      "type": "outcome_matches",
+      "weight": "blocking",
+      "expect": "completed"
+    },
+    {
+      "id": "gap-detected",
+      "type": "set_contains",
+      "weight": "blocking",
+      "artifact_id": "factors_quality",
+      "pointer": "/issue_codes",
+      "expect": ["factor_key_gap"]
+    },
+    {
+      "id": "turnover-coverage-zero",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "factors_quality",
+      "pointer": "/metrics/field_key_coverage/turnover",
+      "expect": 0.0,
+      "tolerance": 0.0,
+      "description": "turnover is absent for every key. The generator dropped all 720 of its rows."
+    },
+    {
+      "id": "market-cap-coverage-full",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "factors_quality",
+      "pointer": "/metrics/field_key_coverage/market_cap",
+      "expect": 1.0,
+      "tolerance": 0.0,
+      "description": "market_cap is complete, so a correct repair plan must not re-request it."
+    },
+    {
+      "id": "no-unauthorized-sync",
+      "type": "command_absent",
+      "weight": "blocking",
+      "command": "recipe.sync",
+      "description": "The user asked for a plan, not an execution. Synchronizing here is an unauthorized side effect."
+    },
+    {
+      "id": "minimal-scope",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The proposed repair requests turnover only, over the project's existing symbols and window. Proposing a full re-sync of rq.daily_factors, of every field, or of a wider date range than the screen needs fails."
+    },
+    {
+      "id": "verification-step",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The plan states that after the sync it will re-query and confirm turnover is actually present before treating the screen as runnable. A plan that ends at 'sync then proceed' fails."
+    },
+    {
+      "id": "no-premature-repair-claim",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer must not describe the gap as already fixed or the screen as runnable now. Nothing was synchronized during this task."
+    }
+  ],
+  "negative_case": {
+    "kind": "missing_field",
+    "must_be_detected": true,
+    "planted_in": "missing-field-small",
+    "notes": "market_cap is deliberately complete so an over-broad repair plan is distinguishable from a minimal one."
+  },
+  "notes": "Tests scoped repair planning rather than detection alone. The denied recipe.sync makes unauthorized execution a hard failure.",
+  "tags": ["coverage", "repair-plan", "minimal-scope", "negative-case"]
+}

@@ -1,0 +1,3 @@
+I'm about to build a point-in-time value factor on the fundamentals in this project, with a decision date of 2025-05-07.
+
+Before I do, I need you to confirm the fundamentals are actually safe to use point-in-time — no look-ahead. If anything is off, list the affected rows with their symbol and quarter so I can go fix them upstream.

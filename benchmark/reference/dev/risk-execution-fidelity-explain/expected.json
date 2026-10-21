@@ -1,0 +1,52 @@
+{
+  "task_id": "risk-execution-fidelity-explain",
+  "independence": "independent_recomputation",
+  "derivation": "Recorded by running run_strategy_backtest twice over the same window on the frozen data/ bundle, once per execution policy, outside any agent. Regenerate with scripts/record_benchmark_references.py.",
+  "fixture": "bundled",
+  "as_of_date": "2025-06-30",
+  "invocation": {
+    "function": "run_strategy_backtest",
+    "project_id": "sdk-v1-default",
+    "revision": 3,
+    "start_date": "2025-01-01",
+    "end_date": "2025-06-30",
+    "seed": 0,
+    "policies": ["illustrative", "strict"]
+  },
+  "ground_truth": {
+    "illustrative": {
+      "total_return": 0.007274349809248681,
+      "sharpe_252": 0.1874031603622639,
+      "execution_reliable": false,
+      "execution_invalid_reasons": ["ILLUSTRATIVE_EXECUTION_DATA"],
+      "execution_fidelity_mean": 0.9995502024089159,
+      "maximum_target_weight_deviation": 0.0008995951821681725,
+      "attempted_trade_count": 87,
+      "successful_trade_count": 87,
+      "cash_rejection_count": 5,
+      "exclusions_symbol_date_count": 0
+    },
+    "strict": {
+      "total_return": 0.0,
+      "sharpe_252": 0.0,
+      "execution_reliable": false,
+      "execution_invalid_reasons": ["MISSING_EXECUTION_STATE"],
+      "execution_fidelity_mean": 0.0,
+      "maximum_target_weight_deviation": 1.0,
+      "attempted_trade_count": 50,
+      "successful_trade_count": 0,
+      "exclusions_symbol_date_count": 50,
+      "exclusions_unique_symbol_count": 45,
+      "market_state_rejection_count": 50
+    },
+    "shared_root_cause": "The tracked bundle carries no suspension or price-limit datasets. Illustrative policy proceeds without that coverage and warns; strict policy refuses to fill any candidate that lacks it.",
+    "correct_conclusion": "Neither run is a reliable execution claim: execution_reliable is false in both cases. Illustrative shows what the modelled strategy would do if fills were always available, at 0.73% total return with near-perfect weight tracking. Strict shows that with the coverage actually on hand, nothing can be filled at all. The fix is to obtain suspension and price-limit data, not to pick whichever policy produces nicer numbers."
+  },
+  "common_failure_modes": [
+    "Declaring the illustrative run trustworthy because execution fidelity is 0.9996; execution_reliable is false there too.",
+    "Reading the strict run's fidelity of 0.0 as perfect tracking rather than as no target reached.",
+    "Attributing the divergence to the strategy, the signal, or the risk model instead of to execution-data coverage.",
+    "Recommending a switch to illustrative as the resolution, with no mention of the missing datasets.",
+    "Reporting the strict run's zeros as a flat performance outcome."
+  ]
+}

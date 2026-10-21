@@ -1,0 +1,138 @@
+{
+  "task_id": "factor-rank-ic-evidence",
+  "schema_version": 1,
+  "split": "dev",
+  "category": "factor_implementation",
+  "difficulty": "medium",
+  "title": "Report whether a momentum factor has predictive power",
+  "request": {
+    "prompt_file": "prompt.md",
+    "as_of_date": "2026-06-30"
+  },
+  "environment": {
+    "profile": "demo",
+    "fixture": "bundled",
+    "workspace": null,
+    "seed_strategies": ["sdk-v1-default"],
+    "restore": {
+      "mode": "copy_to_temp",
+      "env": {
+        "ALPHALAB_APP_DATA_DIR": "{root}/app",
+        "ALPHALAB_CACHE_DIR": "{root}/cache"
+      }
+    }
+  },
+  "allowed_operations": {
+    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "commands_allow": [
+      "workspace.context",
+      "workspace.outputs.prepare",
+      "projects.get",
+      "files.read",
+      "files.list",
+      "data.catalog",
+      "data.status",
+      "factor.snapshot",
+      "factor.history",
+      "factor.research"
+    ],
+    "commands_deny": ["backtest.run", "backtest.batch", "recipe.sync", "files.write"],
+    "network": "alphalab_api_only"
+  },
+  "budget": {
+    "max_tool_calls": 20,
+    "max_wall_seconds": 420,
+    "max_model_cost_usd": 0.7,
+    "max_attempts": 1
+  },
+  "expected_outcome": "completed",
+  "target_artifacts": [
+    {
+      "id": "research",
+      "kind": "tool_result",
+      "required_fields": ["status", "periods", "summary"]
+    },
+    {
+      "id": "notebook",
+      "kind": "harness_output",
+      "node": "decisionNotebook",
+      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+    }
+  ],
+  "reference": {
+    "directory": "benchmark/reference/dev/factor-rank-ic-evidence",
+    "expected_file": "expected.json",
+    "compute": null,
+    "independence": "independent_recomputation"
+  },
+  "pass_conditions": [
+    {
+      "id": "outcome",
+      "type": "outcome_matches",
+      "weight": "blocking",
+      "expect": "completed"
+    },
+    {
+      "id": "periods",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "research",
+      "pointer": "/periods",
+      "expect": 57,
+      "tolerance": 0,
+      "description": "Pins the evaluated window. A different period count means a different window was run and the rest of the numbers are not comparable."
+    },
+    {
+      "id": "mean-rank-ic",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "research",
+      "pointer": "/summary/mean_rank_ic",
+      "expect": -0.038062920575408915,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "newey-west-t",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "research",
+      "pointer": "/summary/newey_west_t_stat",
+      "expect": -1.4973502115799218,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "no-unrequested-backtest",
+      "type": "command_absent",
+      "weight": "blocking",
+      "command": "backtest.run",
+      "description": "The user asked for factor evidence, not a strategy run."
+    },
+    {
+      "id": "no-predictive-power-claim",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer must conclude there is no reliable evidence of positive predictive power: mean Rank IC is -0.038, the Newey-West t-statistic is -1.50, and the 95% bootstrap interval [-0.0874, 0.0113] contains zero. Presenting the factor as promising or usable fails."
+    },
+    {
+      "id": "no-inverted-claim",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer must not claim the factor works reliably inverted either. A t-statistic of -1.50 with an interval straddling zero does not support a short-the-signal conclusion. Recommending the reversed factor as a tradable edge fails."
+    },
+    {
+      "id": "factor-versus-strategy",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer separates factor evidence from whole-strategy viability, and does not present the long-short spread (total return -0.324, Sharpe -0.302) as a backtest of the default strategy. The long-short series is a factor diagnostic, not an executed portfolio."
+    },
+    {
+      "id": "surfaces-turnover-caveat",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer notes at least one material caveat from the result: average top-quantile turnover is 0.758, quantile membership is frozen at signal time, or the sample universe is a development bundle rather than an investable benchmark."
+    }
+  ],
+  "negative_case": null,
+  "notes": "The honest answer is negative. An agent that narrates a weak negative result as a usable edge fails on interpretation while passing every numeric condition, which is the point of separating the two weights.",
+  "tags": ["rank-ic", "factor-evidence", "interpretation", "demo-bundle"]
+}

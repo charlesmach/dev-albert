@@ -1,0 +1,140 @@
+{
+  "task_id": "risk-execution-fidelity-explain",
+  "schema_version": 1,
+  "split": "dev",
+  "category": "risk_execution",
+  "difficulty": "medium",
+  "title": "Explain why two execution policies disagree on the same window",
+  "request": {
+    "prompt_file": "prompt.md",
+    "as_of_date": "2025-06-30"
+  },
+  "environment": {
+    "profile": "demo",
+    "fixture": "bundled",
+    "workspace": null,
+    "seed_strategies": ["sdk-v1-default"],
+    "restore": {
+      "mode": "copy_to_temp",
+      "env": {
+        "ALPHALAB_APP_DATA_DIR": "{root}/app",
+        "ALPHALAB_CACHE_DIR": "{root}/cache"
+      }
+    }
+  },
+  "allowed_operations": {
+    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "commands_allow": [
+      "workspace.context",
+      "workspace.outputs.prepare",
+      "projects.get",
+      "files.read",
+      "data.catalog",
+      "data.status",
+      "data.validate",
+      "backtest.run",
+      "backtest.status",
+      "backtest.wait",
+      "backtest.summary",
+      "backtest.events",
+      "backtest.analysis",
+      "backtest.compare"
+    ],
+    "commands_deny": ["recipe.sync", "files.write"],
+    "requires_confirmation": ["confirm_python_execution"],
+    "network": "alphalab_api_only"
+  },
+  "budget": {
+    "max_tool_calls": 30,
+    "max_wall_seconds": 600,
+    "max_model_cost_usd": 1.0,
+    "max_attempts": 1
+  },
+  "expected_outcome": "completed",
+  "target_artifacts": [
+    {
+      "id": "illustrative_run",
+      "kind": "backtest_run",
+      "required_fields": ["metrics", "diagnostics"]
+    },
+    {
+      "id": "strict_run",
+      "kind": "backtest_run",
+      "required_fields": ["metrics", "diagnostics"]
+    },
+    {
+      "id": "notebook",
+      "kind": "harness_output",
+      "node": "decisionNotebook",
+      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+    }
+  ],
+  "reference": {
+    "directory": "benchmark/reference/dev/risk-execution-fidelity-explain",
+    "expected_file": "expected.json",
+    "compute": null,
+    "independence": "independent_recomputation"
+  },
+  "pass_conditions": [
+    {
+      "id": "outcome",
+      "type": "outcome_matches",
+      "weight": "blocking",
+      "expect": "completed"
+    },
+    {
+      "id": "illustrative-fills",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "illustrative_run",
+      "pointer": "/diagnostics/execution_summary/successful_trade_count",
+      "expect": 87,
+      "tolerance": 0
+    },
+    {
+      "id": "strict-fills",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "strict_run",
+      "pointer": "/diagnostics/execution_summary/successful_trade_count",
+      "expect": 0,
+      "tolerance": 0
+    },
+    {
+      "id": "strict-exclusions",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "strict_run",
+      "pointer": "/diagnostics/execution_data_exclusions/symbol_date_count",
+      "expect": 50,
+      "tolerance": 0
+    },
+    {
+      "id": "both-unreliable",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer states that execution_reliable is false under BOTH policies, for different reasons: ILLUSTRATIVE_EXECUTION_DATA under illustrative, MISSING_EXECUTION_STATE under strict. Presenting the illustrative run as the reliable one fails."
+    },
+    {
+      "id": "names-root-cause",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer identifies the shared root cause: the bundle has no suspension or price-limit coverage. Illustrative proceeds without that coverage and warns; strict refuses to fill without it. The difference is data availability, not a difference in the strategy or the risk model."
+    },
+    {
+      "id": "fidelity-interpreted",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer interprets execution_fidelity correctly: 0.9996 under illustrative means realized weights tracked targets almost exactly, 0.0 under strict with a maximum target-weight deviation of 1.0 means no target was reached at all. Reading the strict 0.0 as perfect or as low tracking error fails."
+    },
+    {
+      "id": "no-policy-recommendation-without-data",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer does not recommend simply switching to illustrative to make the numbers look workable. The correct recommendation is to obtain suspension and price-limit coverage, using illustrative only as an explicitly caveated stand-in."
+    }
+  ],
+  "negative_case": null,
+  "notes": "Requires two authorized runs over the same window. The user authorizes both explicitly in the prompt.",
+  "tags": ["execution-policy", "execution-fidelity", "risk", "demo-bundle"]
+}

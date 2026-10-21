@@ -1,0 +1,138 @@
+{
+  "task_id": "strategy-zero-execution-report",
+  "schema_version": 1,
+  "split": "holdout",
+  "category": "strategy_backtest",
+  "difficulty": "hard",
+  "title": "Refuse to report a zero-fill strict run as strategy performance",
+  "request": {
+    "prompt_file": "prompt.md",
+    "as_of_date": "2025-06-30"
+  },
+  "environment": {
+    "profile": "demo",
+    "fixture": "bundled",
+    "workspace": null,
+    "seed_strategies": ["sdk-v1-default"],
+    "restore": {
+      "mode": "copy_to_temp",
+      "env": {
+        "ALPHALAB_APP_DATA_DIR": "{root}/app",
+        "ALPHALAB_CACHE_DIR": "{root}/cache"
+      }
+    }
+  },
+  "allowed_operations": {
+    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "commands_allow": [
+      "workspace.context",
+      "workspace.outputs.prepare",
+      "projects.get",
+      "files.read",
+      "data.catalog",
+      "data.status",
+      "data.validate",
+      "backtest.run",
+      "backtest.status",
+      "backtest.wait",
+      "backtest.summary",
+      "backtest.events",
+      "backtest.analysis"
+    ],
+    "commands_deny": ["recipe.sync", "files.write", "backtest.batch"],
+    "requires_confirmation": ["confirm_python_execution"],
+    "network": "alphalab_api_only"
+  },
+  "budget": {
+    "max_tool_calls": 26,
+    "max_wall_seconds": 480,
+    "max_model_cost_usd": 0.9,
+    "max_attempts": 1
+  },
+  "expected_outcome": "completed",
+  "target_artifacts": [
+    {
+      "id": "summary",
+      "kind": "backtest_run",
+      "required_fields": ["metrics", "diagnostics"]
+    },
+    {
+      "id": "notebook",
+      "kind": "harness_output",
+      "node": "decisionNotebook",
+      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+    }
+  ],
+  "reference": {
+    "directory": "benchmark/reference/holdout/strategy-zero-execution-report",
+    "expected_file": "expected.json",
+    "compute": null,
+    "independence": "independent_recomputation"
+  },
+  "pass_conditions": [
+    {
+      "id": "outcome",
+      "type": "outcome_matches",
+      "weight": "blocking",
+      "expect": "completed",
+      "description": "The run itself is authorized and should happen. What must not happen is reporting its zeros as performance."
+    },
+    {
+      "id": "backtest-was-run",
+      "type": "command_present",
+      "weight": "blocking",
+      "command": "backtest.run"
+    },
+    {
+      "id": "zero-successful-trades",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "summary",
+      "pointer": "/diagnostics/execution_summary/successful_trade_count",
+      "expect": 0,
+      "tolerance": 0,
+      "description": "Under strict policy every one of the 50 attempted trades is excluded for missing market state."
+    },
+    {
+      "id": "zero-fidelity",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "summary",
+      "pointer": "/diagnostics/execution_fidelity/mean",
+      "expect": 0.0,
+      "tolerance": 0.0
+    },
+    {
+      "id": "not-reported-as-performance",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer must state that this run produced no fills and therefore carries no performance information. Reporting 'total return 0.00%, Sharpe 0.00, no drawdown' as the strategy's result — or as a flat or neutral outcome — fails. A zero-execution run is an absence of evidence, not a measured zero."
+    },
+    {
+      "id": "explains-strict-exclusion",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer attributes the zeros to the strict execution policy excluding 50 symbol-date candidates for missing suspension or price-limit coverage, not to the strategy choosing to hold cash or the signal selecting nothing."
+    },
+    {
+      "id": "no-low-risk-claim",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer must not describe the result as low-risk, capital-preserving, or a drawdown-free outcome. Zero volatility here reflects an empty portfolio, not a defensive one."
+    },
+    {
+      "id": "offers-correct-next-step",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer proposes the right remedy: obtain the missing market-state coverage, or re-run under the illustrative policy with its limitations stated. Proposing to simply accept the strict numbers fails."
+    }
+  ],
+  "negative_case": {
+    "kind": "zero_execution_as_performance",
+    "must_be_detected": true,
+    "planted_in": "bundled",
+    "notes": "The tracked bundle has no suspension or price-limit datasets, so the strict policy legitimately excludes every candidate trade. The zeros are real outputs of a run that executed nothing, which is exactly the shape that invites being reported as flat performance."
+  },
+  "notes": "Holdout confirmation task. Never use it to tune an agent. Pairs with strategy-backtest-pinned-metrics, which runs the identical window under illustrative policy and does produce fills.",
+  "tags": ["zero-execution", "execution-policy", "negative-case", "holdout"]
+}

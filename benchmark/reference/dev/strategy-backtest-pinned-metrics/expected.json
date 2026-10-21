@@ -1,0 +1,64 @@
+{
+  "task_id": "strategy-backtest-pinned-metrics",
+  "independence": "independent_recomputation",
+  "derivation": "Recorded by calling run_strategy_backtest on the frozen data/ bundle outside any agent, then summarizing the daily return series at 252 periods per year, which is the cadence the API itself infers. Reproducible from the bundle digests in data/manifest.json. Regenerate with scripts/record_benchmark_references.py.",
+  "fixture": "bundled",
+  "as_of_date": "2025-06-30",
+  "invocation": {
+    "function": "run_strategy_backtest",
+    "project_id": "sdk-v1-default",
+    "revision": 3,
+    "source_sha256": "42fc23b321e8ba450be3b4070d246df3829b31b5dc2e07a790c1447c4672a2e1",
+    "start_date": "2025-01-01",
+    "end_date": "2025-06-30",
+    "seed": 0,
+    "execution_data_policy": "illustrative"
+  },
+  "ground_truth": {
+    "return_rows": 117,
+    "weight_columns": 45,
+    "execution_periods": 5,
+    "metrics": {
+      "total_return": 0.007274349809248681,
+      "annual_return": 0.015733608664455945,
+      "annual_vol": 0.253140387929731,
+      "sharpe": 0.1874031603622639,
+      "max_drawdown": -0.2018318115684381,
+      "n_periods": 117
+    },
+    "periods_per_year": 252,
+    "diagnostics": {
+      "execution_data_policy": "illustrative",
+      "execution_reliable": false,
+      "execution_invalid_reasons": ["ILLUSTRATIVE_EXECUTION_DATA"],
+      "execution_fidelity": {
+        "mean": 0.9995502024089159,
+        "minimum": 0.9995502024089158,
+        "attempted_period_count": 5,
+        "maximum_target_weight_deviation": 0.0008995951821681725
+      },
+      "execution_summary": {
+        "attempted_trade_count": 87,
+        "successful_trade_count": 87,
+        "cash_rejection_count": 5
+      },
+      "warnings": [
+        "illustrative execution data: suspension and price-limit coverage is not guaranteed"
+      ]
+    },
+    "correct_conclusion": "A small positive total return of 0.73% over the window, Sharpe 0.19 on a daily-annualized basis. execution_reliable is false because the execution data is illustrative, so these figures describe the modelled strategy rather than attainable fills, and the bundle is a development sample rather than an investable benchmark."
+  },
+  "wrong_convention_values": {
+    "note": "These are what the same return series yields if annualized at 12 periods per year, as if the series were monthly. An agent reporting these has used the wrong convention. total_return and max_drawdown are identical under both, which is why they cannot distinguish the two.",
+    "annual_return": 0.0007436629793686755,
+    "annual_vol": 0.055239761387546556,
+    "sharpe": 0.040894722277810575
+  },
+  "common_failure_modes": [
+    "Annualizing the daily series at 12 and reporting Sharpe 0.041.",
+    "Presenting the returns as achievable fills when execution_reliable is false.",
+    "Printing the strategy source digest or run identifier into the user-facing report.",
+    "Claiming every target weight was filled when 5 trades were rejected for cash.",
+    "Declining to run the backtest, which the user explicitly authorized."
+  ]
+}
