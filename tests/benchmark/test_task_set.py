@@ -8,7 +8,6 @@ import shutil
 from pathlib import Path
 
 import pytest
-from jsonschema import Draft202012Validator
 
 from alphalab.dataio.quality import validate_dataset
 
@@ -53,9 +52,13 @@ def _restore(fixture: str, destination: Path) -> Path:
 
 
 def test_every_task_matches_the_published_schema():
+    # jsonschema ships in the app extra, while this group otherwise needs only
+    # core dependencies. Skip rather than break the local gate in CONTRIBUTING.md,
+    # which installs [dev,dashboard,rq]; CI installs [dev,app] and does run this.
+    jsonschema = pytest.importorskip("jsonschema")
     schema = json.loads((BENCHMARK / "schema" / "task.schema.json").read_text(encoding="utf-8"))
-    Draft202012Validator.check_schema(schema)
-    validator = Draft202012Validator(schema)
+    jsonschema.Draft202012Validator.check_schema(schema)
+    validator = jsonschema.Draft202012Validator(schema)
     tasks = _tasks()
     assert tasks, "No benchmark tasks were discovered"
     for path, task in tasks:
