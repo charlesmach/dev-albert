@@ -21,10 +21,15 @@
         "days_early": 32
       }
     ],
-    "leaked_keys": ["600000.SH:2024q2", "600000.SH:2024q3"],
+    "leaked_keys": [
+      "600000.SH:2024q2",
+      "600000.SH:2024q3"
+    ],
     "clean_row_count": 38,
     "total_row_count": 40,
-    "fundamentals_safe_for_point_in_time": false
+    "fundamentals_safe_for_point_in_time": false,
+    "validator_cleared_it": true,
+    "point_in_time_safe": false
   },
   "automated_checks_do_not_catch_this": {
     "canonical.fundamentals": "passed",
@@ -37,5 +42,25 @@
     "Flagging all 40 rows, or all of 600000.SH's 5 quarters, instead of the 2 affected.",
     "Finding the leak but still approving the value factor on the current data.",
     "Comparing available_date against the quarter end rather than the disclosure date, which flags every row."
-  ]
+  ],
+  "expected_findings": {
+    "point_in_time_safe": false,
+    "validator_cleared_it": true,
+    "leaked_rows": [
+      {
+        "symbol": "600000.SH",
+        "quarter": "2024q2",
+        "available_date": "2024-07-05",
+        "disclosed_on": "2024-08-04",
+        "days_early": 30
+      },
+      {
+        "symbol": "600000.SH",
+        "quarter": "2024q3",
+        "available_date": "2024-10-05",
+        "disclosed_on": "2024-11-06",
+        "days_early": 32
+      }
+    ]
+  }
 }

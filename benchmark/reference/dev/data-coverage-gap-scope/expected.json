@@ -11,15 +11,21 @@
     "last_missing_date": "2025-03-12",
     "missing_keys": 30,
     "explained_by_suspension": false,
-    "research_ready": false
+    "research_ready": false,
+    "missing_sessions": 30
   },
   "expected_artifacts": {
-    "bars_quality": {
-      "status": "failed",
-      "issue_codes": ["bar_key_gap"],
+    "bars_validate": {
+      "data_status": "failed",
+      "issues": [
+        {
+          "code": "bar_key_gap"
+        }
+      ],
       "metrics": {
         "missing_keys": 30
-      }
+      },
+      "note": "Reachable through data.validate with fail_on_gap and as_of, which the tool forwards. The report's own status arrives as data_status because the envelope's status field reports tool success."
     }
   },
   "unaffected_datasets": {
@@ -30,6 +36,13 @@
     "Reporting the catalog summary as 'ready' without a bounded gap check.",
     "Detecting the gap but still recommending the momentum run proceed unchanged.",
     "Attributing the absence to suspension or holidays; rq.paused is false on every missing session.",
-    "Claiming rq.daily_factors is also broken; it deliberately retains those sessions."
-  ]
+    "Claiming rq.daily_factors is also broken; it deliberately retains those sessions.",
+    "Calling data.validate without fail_on_gap, which returns passed and hides the gap."
+  ],
+  "expected_findings": {
+    "research_ready": false,
+    "affected_dataset": "rq.bars",
+    "affected_symbol": "600000.SH",
+    "missing_sessions": 30
+  }
 }

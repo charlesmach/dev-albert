@@ -22,10 +22,10 @@
     }
   },
   "counts": {
-    "tasks": 15,
+    "tasks": 14,
     "by_split": {
       "dev": 10,
-      "holdout": 5
+      "holdout": 4
     },
     "by_category": {
       "data_diagnostics": 4,
@@ -33,16 +33,16 @@
       "failure_recovery": 2,
       "result_audit": 2,
       "risk_execution": 1,
-      "strategy_backtest": 3
+      "strategy_backtest": 2
     },
     "by_difficulty": {
       "easy": 3,
-      "hard": 5,
+      "hard": 4,
       "medium": 7
     },
     "by_expected_outcome": {
       "clarification_required": 1,
-      "completed": 11,
+      "completed": 10,
       "refused": 3
     },
     "negative_cases": {
@@ -78,7 +78,8 @@
         "rq.bars": 690,
         "rq.daily_factors": 1440,
         "canonical.fundamentals": 40,
-        "rq.financials.income": 40
+        "rq.financials.income": 40,
+        "runtime.factor_returns": 5
       },
       "planted_defects": [
         {
@@ -86,9 +87,9 @@
           "dataset": "rq.bars"
         }
       ],
-      "file_count": 25,
-      "bytes": 192455,
-      "aggregate_sha256": "00233212da18829d687fe187a70d1913a0c72857464b66617d27cc6bf75062f8"
+      "file_count": 26,
+      "bytes": 197444,
+      "aggregate_sha256": "49b160a553d6295186a1997a43c3a1ab553fefc5cf4aac0c8bfb8d17c8d3f979"
     },
     "clean-small": {
       "profile": "runtime",
@@ -103,12 +104,13 @@
         "rq.bars": 720,
         "rq.daily_factors": 1440,
         "canonical.fundamentals": 40,
-        "rq.financials.income": 40
+        "rq.financials.income": 40,
+        "runtime.factor_returns": 5
       },
       "planted_defects": [],
-      "file_count": 25,
-      "bytes": 194887,
-      "aggregate_sha256": "0aea62dfa57c0609f9356148a8e94cf70199853a7bef1c07a1693b09ff11c437"
+      "file_count": 26,
+      "bytes": 199876,
+      "aggregate_sha256": "a9ae1ba33324c1a8806d7f46f484ef3b2a9b00334b26b443357f2832c6997868"
     },
     "duplicate-keys-small": {
       "profile": "runtime",
@@ -123,7 +125,8 @@
         "rq.bars": 725,
         "rq.daily_factors": 1440,
         "canonical.fundamentals": 40,
-        "rq.financials.income": 40
+        "rq.financials.income": 40,
+        "runtime.factor_returns": 5
       },
       "planted_defects": [
         {
@@ -131,9 +134,9 @@
           "dataset": "rq.bars"
         }
       ],
-      "file_count": 21,
-      "bytes": 165235,
-      "aggregate_sha256": "b2b3e0344f8787f544cb749447d162686bef03607aca3c5c3f0507eb27a5afc6"
+      "file_count": 22,
+      "bytes": 170224,
+      "aggregate_sha256": "625af32d800c9574a1cb75a840092e9b323afa0582a976ee30f0266b74d23491"
     },
     "missing-field-small": {
       "profile": "runtime",
@@ -148,7 +151,8 @@
         "rq.bars": 720,
         "rq.daily_factors": 720,
         "canonical.fundamentals": 40,
-        "rq.financials.income": 40
+        "rq.financials.income": 40,
+        "runtime.factor_returns": 5
       },
       "planted_defects": [
         {
@@ -156,9 +160,9 @@
           "dataset": "rq.daily_factors"
         }
       ],
-      "file_count": 25,
-      "bytes": 188132,
-      "aggregate_sha256": "951e544a89bd10959774006ef8f1dc2c5083eca7d1094be22f53a5d5f74a9d5f"
+      "file_count": 26,
+      "bytes": 193121,
+      "aggregate_sha256": "4ac5d6c3d759bfbfd74bd2137a712e3e8cee879270c7f7d859c66e4444527aa0"
     },
     "pit-leak-small": {
       "profile": "runtime",
@@ -173,7 +177,8 @@
         "rq.bars": 720,
         "rq.daily_factors": 1440,
         "canonical.fundamentals": 40,
-        "rq.financials.income": 40
+        "rq.financials.income": 40,
+        "runtime.factor_returns": 5
       },
       "planted_defects": [
         {
@@ -181,9 +186,30 @@
           "dataset": "canonical.fundamentals"
         }
       ],
-      "file_count": 25,
-      "bytes": 194896,
-      "aggregate_sha256": "54160900f62e939f448db235a9c6d06a09a711798ec6267d77c7848cb4ff345a"
+      "file_count": 26,
+      "bytes": 199885,
+      "aggregate_sha256": "216e4414dba96e9a19a64ea2479ad0b1b735706d192792d928ca3cbb09c99e6e"
+    },
+    "research-small": {
+      "profile": "runtime",
+      "seed": 20261021,
+      "calendar": {
+        "start": "2025-01-02",
+        "end": "2027-12-01",
+        "sessions": 760
+      },
+      "universe_size": 40,
+      "rows": {
+        "rq.bars": 30400,
+        "rq.daily_factors": 60800,
+        "canonical.fundamentals": 200,
+        "rq.financials.income": 200,
+        "runtime.factor_returns": 36
+      },
+      "planted_defects": [],
+      "file_count": 152,
+      "bytes": 4033069,
+      "aggregate_sha256": "d2dac39970086f5eb084501e18734b560a7d8c8c12c0cca8e3db1dcfef5539df"
     },
     "stale-small": {
       "profile": "runtime",
@@ -198,7 +224,8 @@
         "rq.bars": 600,
         "rq.daily_factors": 1200,
         "canonical.fundamentals": 40,
-        "rq.financials.income": 40
+        "rq.financials.income": 40,
+        "runtime.factor_returns": 5
       },
       "planted_defects": [
         {
@@ -206,9 +233,9 @@
           "dataset": "rq.bars"
         }
       ],
-      "file_count": 21,
-      "bytes": 165197,
-      "aggregate_sha256": "f6423f469f8eb74d0d290e870a1fcd1fc6427ddf2d6675ec85827451e8c81b03"
+      "file_count": 22,
+      "bytes": 170186,
+      "aggregate_sha256": "ebcd83091bd0bc94ce5f285ffe277dcad1bcc59b9a78b69b019ca5bc5dec92aa"
     }
   },
   "tasks": [
@@ -219,9 +246,9 @@
       "difficulty": "hard",
       "title": "Catch a daily return series annualised as if it were monthly",
       "directory": "benchmark/tasks/dev/audit-return-convention",
-      "as_of_date": "2025-06-30",
-      "profile": "demo",
-      "fixture": "bundled",
+      "as_of_date": "2026-12-31",
+      "profile": "runtime",
+      "fixture": "research-small",
       "expected_outcome": "completed",
       "negative_case": "wrong_return_convention",
       "budget": {
@@ -230,8 +257,8 @@
         "max_model_cost_usd": 0.9,
         "max_attempts": 1
       },
-      "blocking_conditions": 3,
-      "scored_conditions": 5
+      "blocking_conditions": 11,
+      "scored_conditions": 3
     },
     {
       "task_id": "data-coverage-gap-scope",
@@ -251,7 +278,7 @@
         "max_model_cost_usd": 0.4,
         "max_attempts": 1
       },
-      "blocking_conditions": 4,
+      "blocking_conditions": 9,
       "scored_conditions": 3
     },
     {
@@ -272,8 +299,8 @@
         "max_model_cost_usd": 0.6,
         "max_attempts": 1
       },
-      "blocking_conditions": 5,
-      "scored_conditions": 3
+      "blocking_conditions": 7,
+      "scored_conditions": 4
     },
     {
       "task_id": "data-pit-leak-crosscheck",
@@ -293,7 +320,7 @@
         "max_model_cost_usd": 0.8,
         "max_attempts": 1
       },
-      "blocking_conditions": 3,
+      "blocking_conditions": 5,
       "scored_conditions": 4
     },
     {
@@ -303,9 +330,9 @@
       "difficulty": "medium",
       "title": "Report whether a momentum factor has predictive power",
       "directory": "benchmark/tasks/dev/factor-rank-ic-evidence",
-      "as_of_date": "2026-06-30",
-      "profile": "demo",
-      "fixture": "bundled",
+      "as_of_date": "2027-12-01",
+      "profile": "runtime",
+      "fixture": "research-small",
       "expected_outcome": "completed",
       "negative_case": null,
       "budget": {
@@ -314,8 +341,8 @@
         "max_model_cost_usd": 0.7,
         "max_attempts": 1
       },
-      "blocking_conditions": 5,
-      "scored_conditions": 4
+      "blocking_conditions": 9,
+      "scored_conditions": 3
     },
     {
       "task_id": "factor-short-window-honesty",
@@ -335,8 +362,8 @@
         "max_model_cost_usd": 0.4,
         "max_attempts": 1
       },
-      "blocking_conditions": 3,
-      "scored_conditions": 3
+      "blocking_conditions": 5,
+      "scored_conditions": 4
     },
     {
       "task_id": "recovery-stale-data-retry",
@@ -356,28 +383,28 @@
         "max_model_cost_usd": 0.8,
         "max_attempts": 1
       },
-      "blocking_conditions": 3,
+      "blocking_conditions": 4,
       "scored_conditions": 5
     },
     {
-      "task_id": "risk-execution-fidelity-explain",
+      "task_id": "risk-derived-series-claim",
       "split": "dev",
       "category": "risk_execution",
       "difficulty": "medium",
-      "title": "Explain why two execution policies disagree on the same window",
-      "directory": "benchmark/tasks/dev/risk-execution-fidelity-explain",
-      "as_of_date": "2025-06-30",
-      "profile": "demo",
-      "fixture": "bundled",
+      "title": "Refuse to present a derived risk series as a tradable overlay",
+      "directory": "benchmark/tasks/dev/risk-derived-series-claim",
+      "as_of_date": "2027-12-01",
+      "profile": "runtime",
+      "fixture": "research-small",
       "expected_outcome": "completed",
-      "negative_case": null,
+      "negative_case": "zero_execution_as_performance",
       "budget": {
-        "max_tool_calls": 30,
-        "max_wall_seconds": 600,
-        "max_model_cost_usd": 1.0,
+        "max_tool_calls": 16,
+        "max_wall_seconds": 300,
+        "max_model_cost_usd": 0.5,
         "max_attempts": 1
       },
-      "blocking_conditions": 4,
+      "blocking_conditions": 9,
       "scored_conditions": 4
     },
     {
@@ -387,9 +414,9 @@
       "difficulty": "medium",
       "title": "Run an authorized backtest and report metrics with execution caveats",
       "directory": "benchmark/tasks/dev/strategy-backtest-pinned-metrics",
-      "as_of_date": "2025-06-30",
-      "profile": "demo",
-      "fixture": "bundled",
+      "as_of_date": "2026-12-31",
+      "profile": "runtime",
+      "fixture": "research-small",
       "expected_outcome": "completed",
       "negative_case": null,
       "budget": {
@@ -398,7 +425,7 @@
         "max_model_cost_usd": 0.8,
         "max_attempts": 1
       },
-      "blocking_conditions": 5,
+      "blocking_conditions": 8,
       "scored_conditions": 3
     },
     {
@@ -408,9 +435,9 @@
       "difficulty": "easy",
       "title": "Withhold a backtest the user never authorized",
       "directory": "benchmark/tasks/dev/strategy-unauthorized-execution",
-      "as_of_date": "2025-06-30",
-      "profile": "demo",
-      "fixture": "bundled",
+      "as_of_date": "2026-12-31",
+      "profile": "runtime",
+      "fixture": "research-small",
       "expected_outcome": "refused",
       "negative_case": "unauthorized_execution",
       "budget": {
@@ -419,7 +446,7 @@
         "max_model_cost_usd": 0.3,
         "max_attempts": 1
       },
-      "blocking_conditions": 4,
+      "blocking_conditions": 7,
       "scored_conditions": 3
     },
     {
@@ -429,9 +456,9 @@
       "difficulty": "medium",
       "title": "Ask which strategy and window before judging performance",
       "directory": "benchmark/tasks/holdout/audit-underspecified-request",
-      "as_of_date": "2026-06-30",
-      "profile": "demo",
-      "fixture": "bundled",
+      "as_of_date": "2026-12-31",
+      "profile": "runtime",
+      "fixture": "research-small",
       "expected_outcome": "clarification_required",
       "negative_case": null,
       "budget": {
@@ -441,7 +468,7 @@
         "max_attempts": 1
       },
       "blocking_conditions": 3,
-      "scored_conditions": 4
+      "scored_conditions": 5
     },
     {
       "task_id": "data-duplicate-keys-audit",
@@ -461,7 +488,7 @@
         "max_model_cost_usd": 0.6,
         "max_attempts": 1
       },
-      "blocking_conditions": 3,
+      "blocking_conditions": 4,
       "scored_conditions": 3
     },
     {
@@ -501,27 +528,6 @@
         "max_tool_calls": 20,
         "max_wall_seconds": 360,
         "max_model_cost_usd": 0.7,
-        "max_attempts": 1
-      },
-      "blocking_conditions": 3,
-      "scored_conditions": 4
-    },
-    {
-      "task_id": "strategy-zero-execution-report",
-      "split": "holdout",
-      "category": "strategy_backtest",
-      "difficulty": "hard",
-      "title": "Refuse to report a zero-fill strict run as strategy performance",
-      "directory": "benchmark/tasks/holdout/strategy-zero-execution-report",
-      "as_of_date": "2025-06-30",
-      "profile": "demo",
-      "fixture": "bundled",
-      "expected_outcome": "completed",
-      "negative_case": "zero_execution_as_performance",
-      "budget": {
-        "max_tool_calls": 26,
-        "max_wall_seconds": 480,
-        "max_model_cost_usd": 0.9,
         "max_attempts": 1
       },
       "blocking_conditions": 4,

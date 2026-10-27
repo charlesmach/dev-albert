@@ -23,7 +23,9 @@
     }
   },
   "allowed_operations": {
-    "tools": ["alphalab_project_run"],
+    "tools": [
+      "alphalab_project_run"
+    ],
     "commands_allow": [
       "workspace.context",
       "workspace.outputs.prepare",
@@ -33,7 +35,11 @@
       "data.validate",
       "data.market_bars"
     ],
-    "commands_deny": ["recipe.sync", "backtest.run", "backtest.batch"],
+    "commands_deny": [
+      "recipe.sync",
+      "backtest.run",
+      "backtest.batch"
+    ],
     "network": "alphalab_api_only"
   },
   "budget": {
@@ -46,14 +52,24 @@
   "target_artifacts": [
     {
       "id": "bars_quality",
-      "kind": "quality_report",
-      "required_fields": ["status", "issues", "metrics"]
+      "kind": "tool_result",
+      "required_fields": [
+        "data_status",
+        "issues",
+        "metrics"
+      ],
+      "source_command": "data.validate"
     },
     {
       "id": "notebook",
       "kind": "harness_output",
       "node": "decisionNotebook",
-      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+      "required_fields": [
+        "classification",
+        "baseCase",
+        "riskCase",
+        "nextAction"
+      ]
     }
   ],
   "reference": {
@@ -70,12 +86,26 @@
       "expect": "completed"
     },
     {
+      "id": "validate-reports-failure",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "bars_quality",
+      "pointer": "/data_status",
+      "expect": "failed",
+      "description": "The tool surfaces the validation report's own status as data_status, since the envelope's status field reports tool success."
+    },
+    {
       "id": "duplicates-detected",
       "type": "set_contains",
       "weight": "blocking",
       "artifact_id": "bars_quality",
-      "pointer": "/issue_codes",
-      "expect": ["duplicate_keys"]
+      "pointer": "/issues",
+      "expect": [
+        "duplicate_keys"
+      ],
+      "project": [
+        "code"
+      ]
     },
     {
       "id": "no-unauthorized-sync",
@@ -109,5 +139,10 @@
     "notes": "Written straight to the partition file, since RuntimeStore.write would have de-duplicated the keys on its own. The fixture therefore represents a write path that bypassed the store's guard."
   },
   "notes": "Holdout confirmation task. Never use it to tune an agent.",
-  "tags": ["duplicate-keys", "re-execution", "negative-case", "holdout"]
+  "tags": [
+    "duplicate-keys",
+    "re-execution",
+    "negative-case",
+    "holdout"
+  ]
 }

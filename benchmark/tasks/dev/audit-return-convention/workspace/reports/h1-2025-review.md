@@ -1,35 +1,34 @@
-# H1 2025 Strategy Review — Default Momentum
+# 2025–2026 Strategy Review — Default Momentum
 
 Prepared for the Thursday investment committee. Figures taken from the
-1 January 2025 – 30 June 2025 event backtest of the default strategy
-(`sdk-v1-default`), illustrative execution policy, seed 0.
+3 February 2025 – 31 December 2026 event backtest of the default strategy
+(`sdk-v1-default`), seed 0.
 
 ## Headline figures
 
 | Metric | Value |
 | --- | --- |
-| Total return | 0.73% |
-| Annualised return | 0.07% |
-| Annualised volatility | 5.52% |
-| Sharpe ratio | 0.04 |
-| Max drawdown | -20.18% |
-| Observations | 117 |
+| Total return | 14.31% |
+| Annualised return | 0.32% |
+| Annualised volatility | 2.04% |
+| Sharpe ratio | 0.17 |
+| Max drawdown | -12.91% |
+| Observations | 499 |
 
 ## Commentary
 
-The strategy delivered a modest positive total return of 0.73% over the
-half-year. Annualised, this comes to 0.07% against 5.52% volatility, for a
-Sharpe ratio of 0.04.
+The strategy delivered a total return of 14.31% over the period. Annualised, this
+comes to 0.32% against 2.04% volatility, for a Sharpe ratio of 0.17.
 
-The volatility figure is the encouraging part of this table: at 5.52%
-annualised, the book is running well inside our 15% risk budget, which leaves
-room to size the strategy up if the committee wants more exposure to the
-signal. The Sharpe is admittedly thin, but on a low-volatility book a weak
-Sharpe is less concerning than it would be on a high-volatility one.
+The volatility figure is the encouraging part of this table: at 2.04% annualised,
+the book is running far inside our 15% risk budget, which leaves substantial room
+to size the strategy up if the committee wants more exposure to the signal. The
+Sharpe is admittedly thin, but on a book this quiet a weak Sharpe is less
+concerning than it would be on a volatile one.
 
-Max drawdown of -20.18% is the one figure that warrants discussion.
+Max drawdown of -12.91% is the one figure that warrants discussion.
 
 ## Recommendation
 
-Hold the current allocation and revisit after Q3. Given the low realised
-volatility, a modest increase in position sizing is defensible.
+Hold the current allocation and revisit after Q1. Given the very low realised
+volatility, a material increase in position sizing is defensible.

@@ -2,7 +2,7 @@
   "fixture": "missing-field-small",
   "profile": "runtime",
   "seed": 20261021,
-  "generated_at": "2026-10-21T13:58:28.115625+00:00",
+  "generated_at": "2026-10-27T09:25:28.851838+00:00",
   "generator": "scripts/build_benchmark_data.py",
   "source": "synthetic; seeded pseudo-random walk, no vendor data",
   "license": "same terms as this repository; contains no licensed market data",
@@ -52,9 +52,14 @@
     "rq.bars": 720,
     "rq.daily_factors": 720,
     "canonical.fundamentals": 40,
-    "rq.financials.income": 40
+    "rq.financials.income": 40,
+    "runtime.factor_returns": 5
   },
   "files": {
+    "canonical/factor_returns/year=2025/part.parquet": {
+      "bytes": 4989,
+      "sha256": "777ab07d63aa61ebaed13cfb27ec971de69d904ec9461eab52913871e8e3d0d8"
+    },
     "canonical/fundamentals/year=2024/part.parquet": {
       "bytes": 10552,
       "sha256": "8e4fc702943bfb23c8c37b3a3fe51673c18667d3e62a48cfbc51f6f3880ad3ee"

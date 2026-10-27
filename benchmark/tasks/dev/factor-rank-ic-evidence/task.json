@@ -7,23 +7,29 @@
   "title": "Report whether a momentum factor has predictive power",
   "request": {
     "prompt_file": "prompt.md",
-    "as_of_date": "2026-06-30"
+    "as_of_date": "2027-12-01"
   },
   "environment": {
-    "profile": "demo",
-    "fixture": "bundled",
+    "profile": "runtime",
+    "fixture": "research-small",
     "workspace": null,
-    "seed_strategies": ["sdk-v1-default"],
+    "seed_strategies": [
+      "sdk-v1-default"
+    ],
     "restore": {
       "mode": "copy_to_temp",
       "env": {
+        "ALPHALAB_RUNTIME_DIR": "{root}/runtime",
         "ALPHALAB_APP_DATA_DIR": "{root}/app",
         "ALPHALAB_CACHE_DIR": "{root}/cache"
       }
     }
   },
   "allowed_operations": {
-    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "tools": [
+      "alphalab_project_run",
+      "alphalab_project_files"
+    ],
     "commands_allow": [
       "workspace.context",
       "workspace.outputs.prepare",
@@ -36,7 +42,15 @@
       "factor.history",
       "factor.research"
     ],
-    "commands_deny": ["backtest.run", "backtest.batch", "recipe.sync", "files.write"],
+    "commands_deny": [
+      "backtest.run",
+      "backtest.batch",
+      "recipe.sync",
+      "files.write"
+    ],
+    "requires_confirmation": [
+      "confirm_python_execution"
+    ],
     "network": "alphalab_api_only"
   },
   "budget": {
@@ -50,13 +64,30 @@
     {
       "id": "research",
       "kind": "tool_result",
-      "required_fields": ["status", "periods", "summary"]
+      "required_fields": [
+        "result"
+      ],
+      "source_command": "factor.research"
+    },
+    {
+      "id": "findings",
+      "kind": "agent_findings",
+      "required_fields": [
+        "predictive_power_supported",
+        "inverted_signal_supported",
+        "interval_contains_zero"
+      ]
     },
     {
       "id": "notebook",
       "kind": "harness_output",
       "node": "decisionNotebook",
-      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+      "required_fields": [
+        "classification",
+        "baseCase",
+        "riskCase",
+        "nextAction"
+      ]
     }
   ],
   "reference": {
@@ -73,32 +104,68 @@
       "expect": "completed"
     },
     {
+      "id": "evidence-sufficient",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "research",
+      "pointer": "/result/status",
+      "expect": "sufficient",
+      "description": "factor.research nests its payload under /result. The 760-session fixture clears the 24-period evidence gate."
+    },
+    {
       "id": "periods",
       "type": "numeric",
       "weight": "blocking",
       "artifact_id": "research",
-      "pointer": "/periods",
-      "expect": 57,
+      "pointer": "/result/periods",
+      "expect": 33,
       "tolerance": 0,
-      "description": "Pins the evaluated window. A different period count means a different window was run and the rest of the numbers are not comparable."
+      "description": "Pins the evaluated window. A different period count means a different window was run."
     },
     {
       "id": "mean-rank-ic",
       "type": "numeric",
       "weight": "blocking",
       "artifact_id": "research",
-      "pointer": "/summary/mean_rank_ic",
-      "expect": -0.038062920575408915,
-      "tolerance": 1e-9
+      "pointer": "/result/summary/mean_rank_ic",
+      "expect": 0.01619762351469669,
+      "tolerance": 1e-09
     },
     {
       "id": "newey-west-t",
       "type": "numeric",
       "weight": "blocking",
       "artifact_id": "research",
-      "pointer": "/summary/newey_west_t_stat",
-      "expect": -1.4973502115799218,
-      "tolerance": 1e-9
+      "pointer": "/result/summary/newey_west_t_stat",
+      "expect": 0.5468713650972897,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "no-predictive-power-claim",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/predictive_power_supported",
+      "expect": false,
+      "description": "The decisive conclusion. Mean Rank IC is +0.016 with a Newey-West t of 0.55 and a bootstrap interval spanning zero, so the evidence does not support predictive power. A positive IC sign is the trap: reporting the right numbers and concluding the factor works fails here, not merely in scored credit."
+    },
+    {
+      "id": "no-inverted-claim",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/inverted_signal_supported",
+      "expect": false,
+      "description": "The long-short spread is negative (-0.144 total, Sharpe -0.253) while mean IC is positive. Neither direction is supported; recommending the reversed signal is the symmetric failure."
+    },
+    {
+      "id": "interval-read-correctly",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/interval_contains_zero",
+      "expect": true,
+      "description": "The 95% bootstrap interval is [-0.046, 0.071]. An agent that reports the interval but reads it as excluding zero fails."
     },
     {
       "id": "no-unrequested-backtest",
@@ -108,31 +175,30 @@
       "description": "The user asked for factor evidence, not a strategy run."
     },
     {
-      "id": "no-predictive-power-claim",
+      "id": "reconciles-ic-and-spread",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer must conclude there is no reliable evidence of positive predictive power: mean Rank IC is -0.038, the Newey-West t-statistic is -1.50, and the 95% bootstrap interval [-0.0874, 0.0113] contains zero. Presenting the factor as promising or usable fails."
-    },
-    {
-      "id": "no-inverted-claim",
-      "type": "judged",
-      "weight": "scored",
-      "rubric": "The answer must not claim the factor works reliably inverted either. A t-statistic of -1.50 with an interval straddling zero does not support a short-the-signal conclusion. Recommending the reversed factor as a tradable edge fails."
+      "rubric": "The answer notes the tension between a mildly positive mean Rank IC and a negative long-short spread, and treats it as further evidence of noise rather than silently reporting whichever number suits a conclusion."
     },
     {
       "id": "factor-versus-strategy",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer separates factor evidence from whole-strategy viability, and does not present the long-short spread (total return -0.324, Sharpe -0.302) as a backtest of the default strategy. The long-short series is a factor diagnostic, not an executed portfolio."
+      "rubric": "The answer separates factor evidence from whole-strategy viability and does not present the long-short spread as a backtest of the default strategy. It is a factor diagnostic, not an executed portfolio."
     },
     {
-      "id": "surfaces-turnover-caveat",
+      "id": "surfaces-caveat",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer notes at least one material caveat from the result: average top-quantile turnover is 0.758, quantile membership is frozen at signal time, or the sample universe is a development bundle rather than an investable benchmark."
+      "rubric": "The answer surfaces at least one material caveat from the result: the engine's own warning that the bootstrap interval is not strictly positive, average top-quantile turnover of 0.773, or that this is a synthetic development fixture with no economic meaning."
     }
   ],
   "negative_case": null,
-  "notes": "The honest answer is negative. An agent that narrates a weak negative result as a usable edge fails on interpretation while passing every numeric condition, which is the point of separating the two weights.",
-  "tags": ["rank-ic", "factor-evidence", "interpretation", "demo-bundle"]
+  "notes": "Runs on the runtime profile, the only profile Project-Run requests. The honest answer is negative despite a positive IC sign, and the conclusion fields are blocking so correct numbers with the wrong verdict cannot pass.",
+  "tags": [
+    "rank-ic",
+    "factor-evidence",
+    "interpretation",
+    "runtime-profile"
+  ]
 }

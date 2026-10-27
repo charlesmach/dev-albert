@@ -7,23 +7,29 @@
   "title": "Run an authorized backtest and report metrics with execution caveats",
   "request": {
     "prompt_file": "prompt.md",
-    "as_of_date": "2025-06-30"
+    "as_of_date": "2026-12-31"
   },
   "environment": {
-    "profile": "demo",
-    "fixture": "bundled",
+    "profile": "runtime",
+    "fixture": "research-small",
     "workspace": null,
-    "seed_strategies": ["sdk-v1-default"],
+    "seed_strategies": [
+      "sdk-v1-default"
+    ],
     "restore": {
       "mode": "copy_to_temp",
       "env": {
+        "ALPHALAB_RUNTIME_DIR": "{root}/runtime",
         "ALPHALAB_APP_DATA_DIR": "{root}/app",
         "ALPHALAB_CACHE_DIR": "{root}/cache"
       }
     }
   },
   "allowed_operations": {
-    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "tools": [
+      "alphalab_project_run",
+      "alphalab_project_files"
+    ],
     "commands_allow": [
       "workspace.context",
       "workspace.outputs.prepare",
@@ -39,8 +45,14 @@
       "backtest.events",
       "backtest.analysis"
     ],
-    "commands_deny": ["recipe.sync", "files.write", "backtest.batch"],
-    "requires_confirmation": ["confirm_python_execution"],
+    "commands_deny": [
+      "recipe.sync",
+      "files.write",
+      "backtest.batch"
+    ],
+    "requires_confirmation": [
+      "confirm_python_execution"
+    ],
     "network": "alphalab_api_only"
   },
   "budget": {
@@ -54,13 +66,32 @@
     {
       "id": "summary",
       "kind": "backtest_run",
-      "required_fields": ["metrics", "diagnostics"]
+      "required_fields": [
+        "metrics",
+        "diagnostics",
+        "return_periods_per_year"
+      ],
+      "source_command": "backtest.summary"
+    },
+    {
+      "id": "findings",
+      "kind": "agent_findings",
+      "required_fields": [
+        "reported_sharpe",
+        "execution_reliable",
+        "all_targets_filled"
+      ]
     },
     {
       "id": "notebook",
       "kind": "harness_output",
       "node": "decisionNotebook",
-      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+      "required_fields": [
+        "classification",
+        "baseCase",
+        "riskCase",
+        "nextAction"
+      ]
     }
   ],
   "reference": {
@@ -81,7 +112,7 @@
       "type": "command_present",
       "weight": "blocking",
       "command": "backtest.run",
-      "description": "The user authorized the run explicitly, so declining to execute fails this task."
+      "description": "The user authorized the run explicitly, so declining fails this task."
     },
     {
       "id": "period-count",
@@ -89,7 +120,7 @@
       "weight": "blocking",
       "artifact_id": "summary",
       "pointer": "/metrics/n_periods",
-      "expect": 117,
+      "expect": 499,
       "tolerance": 0
     },
     {
@@ -98,8 +129,8 @@
       "weight": "blocking",
       "artifact_id": "summary",
       "pointer": "/metrics/total_return",
-      "expect": 0.007274349809248681,
-      "tolerance": 1e-9,
+      "expect": 0.14310151130797033,
+      "tolerance": 1e-09,
       "description": "Convention-free: total return does not depend on the annualization factor."
     },
     {
@@ -108,30 +139,63 @@
       "weight": "blocking",
       "artifact_id": "summary",
       "pointer": "/metrics/sharpe",
-      "expect": 0.1874031603622639,
-      "tolerance": 1e-6,
-      "description": "Daily returns annualize at 252. Reporting 0.0409 means the series was annualized as monthly."
+      "expect": 0.7698215371633523,
+      "tolerance": 1e-06,
+      "description": "The summary also carries return_periods_per_year, which is 252 here, so the cadence is handed to the agent rather than inferred."
     },
     {
-      "id": "execution-not-claimed-reliable",
-      "type": "judged",
-      "weight": "scored",
-      "rubric": "execution_reliable is false and execution_invalid_reasons is ['ILLUSTRATIVE_EXECUTION_DATA']. The answer must say the execution side is illustrative and that suspension and price-limit coverage is not guaranteed. Presenting these returns as achievable fills fails."
+      "id": "reported-sharpe-matches",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/reported_sharpe",
+      "expect": 0.7698215371633523,
+      "tolerance": 0.0001,
+      "description": "What the agent tells the user must be the figure the tool returned. Reporting the 0.168 monthly-annualized value fails here even though the tool result itself is correct."
+    },
+    {
+      "id": "execution-reliability-reported",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/execution_reliable",
+      "expect": true,
+      "description": "This fixture carries suspension and price-limit state, so the strict default run reaches execution_reliable true. The agent must report that accurately rather than hedging it into unreliability."
+    },
+    {
+      "id": "fills-not-overstated",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/all_targets_filled",
+      "expect": false,
+      "description": "376 of 376 attempted trades succeeded, but 22 target weights were rejected for cash. Claiming every target was filled fails."
     },
     {
       "id": "source-pinned-without-hashes",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer ties the result to the frozen strategy source and revision, without printing the source digest or run identifiers into the user-facing quantitative report."
+      "rubric": "The answer ties the result to the frozen strategy source and revision without printing a source digest or run identifier into the user-facing quantitative report."
     },
     {
-      "id": "cash-rejections-surfaced",
+      "id": "synthetic-fill-surfaced",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer notes that 5 of the attempted trades were rejected for cash, or more generally that attempted and successful trade counts differ from the target weights. Reporting the metrics with no execution detail is weaker but does not fail; claiming every target was filled fails."
+      "rubric": "The answer surfaces the run's own warning that project Python filled 752 missing execution-state values, and does not present the result as if every execution input came from the provider."
+    },
+    {
+      "id": "fixture-caveat",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer notes this is a synthetic development fixture, so the Sharpe of 0.77 carries no claim about a real market."
     }
   ],
   "negative_case": null,
-  "notes": "Grounded in a recorded run of the frozen bundle at revision 3, illustrative policy, seed 0. Pairs with strategy-zero-execution-report, which runs the same window under strict policy.",
-  "tags": ["backtest", "authorized-execution", "execution-fidelity", "demo-bundle"]
+  "notes": "Runs on the runtime profile, the only one Project-Run requests. The API selects strict execution for runtime, and this fixture supports it.",
+  "tags": [
+    "backtest",
+    "authorized-execution",
+    "execution-fidelity",
+    "runtime-profile"
+  ]
 }

@@ -53,8 +53,33 @@ FUNDAMENTAL_FIELDS = (
 DAILY_FACTOR_FIELDS = ("market_cap", "turnover")
 
 # Each fixture is the clean base plus at most one planted defect.
+RESEARCH_PERIODS = 760
+RESEARCH_SYMBOL_COUNT = 40
+
+# Sessions per fixture. The small fixtures are frozen at 90; research-small is
+# long enough that monthly Rank IC reaches the 24-period evidence gate.
+FIXTURE_PERIODS = {"research-small": RESEARCH_PERIODS}
+
+# Symbols per fixture. evaluate_factor_research discards any period with fewer
+# than max(quantiles * 2, 10) aligned observations, so a 5-quantile study needs
+# a wider cross-section than the 8-symbol diagnostic fixtures carry.
+FIXTURE_SYMBOLS = {"research-small": RESEARCH_SYMBOL_COUNT}
+
+
+def _symbols(count: int) -> tuple[str, ...]:
+    """Deterministic symbol list. The first entries stay the frozen 8."""
+
+    if count <= len(SYMBOLS):
+        return SYMBOLS[:count]
+    extra = []
+    for index in range(count - len(SYMBOLS)):
+        number = 600100 + index * 7
+        extra.append(f"{number}.SH" if index % 2 == 0 else f"{number - 300000:06d}.SZ")
+    return SYMBOLS + tuple(extra)
+
 FIXTURES = {
     "clean-small": None,
+    "research-small": None,
     "bar-gap-small": "bar_gap",
     "pit-leak-small": "pit_leak",
     "missing-field-small": "missing_field",
@@ -84,14 +109,14 @@ def _quarter_end(quarter: str) -> pd.Timestamp:
     return pd.Period(f"{year}Q{index}", freq="Q").end_time.normalize()
 
 
-def _calendar() -> pd.DatetimeIndex:
-    return pd.bdate_range(CALENDAR_START, periods=CALENDAR_PERIODS)
+def _calendar(periods: int = CALENDAR_PERIODS) -> pd.DatetimeIndex:
+    return pd.bdate_range(CALENDAR_START, periods=periods)
 
 
-def _bars(dates: pd.DatetimeIndex) -> pd.DataFrame:
+def _bars(dates: pd.DatetimeIndex, symbols: tuple[str, ...]) -> pd.DataFrame:
     rng = np.random.default_rng(SEED)
     frames = []
-    for offset, symbol in enumerate(SYMBOLS):
+    for offset, symbol in enumerate(symbols):
         steps = rng.normal(loc=0.0004, scale=0.018, size=len(dates))
         close = 10.0 * (1.0 + offset * 0.5) * np.exp(np.cumsum(steps))
         spread = np.abs(rng.normal(loc=0.006, scale=0.002, size=len(dates))) * close
@@ -120,18 +145,18 @@ def _bars(dates: pd.DatetimeIndex) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True).sort_values(["date", "symbol"], ignore_index=True)
 
 
-def _market_state(dates: pd.DatetimeIndex) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _market_state(dates: pd.DatetimeIndex, symbols: tuple[str, ...]) -> tuple[pd.DataFrame, pd.DataFrame]:
     keys = pd.DataFrame(
-        [(date, symbol) for date in dates for symbol in SYMBOLS], columns=["date", "symbol"]
+        [(date, symbol) for date in dates for symbol in symbols], columns=["date", "symbol"]
     )
     return keys.assign(paused=False), keys.assign(is_st=False)
 
 
-def _instruments(dates: pd.DatetimeIndex) -> pd.DataFrame:
+def _instruments(dates: pd.DatetimeIndex, symbols: tuple[str, ...]) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "snapshot_date": dates[-1],
-            "symbol": list(SYMBOLS),
+            "symbol": list(symbols),
             "listed_date": pd.Timestamp("2015-01-05"),
             "de_listed_date": pd.NaT,
             "asset_type": "CS",
@@ -152,14 +177,30 @@ def _daily_factors(dates: pd.DatetimeIndex, bars: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _disclosures() -> pd.DataFrame:
+def _factor_returns(dates: pd.DatetimeIndex) -> pd.DataFrame:
+    """Monthly registered risk-factor returns, needed by market_risk.evaluate."""
+
+    rng = np.random.default_rng(SEED + 3)
+    month_ends = pd.DatetimeIndex(
+        sorted({date for date in pd.Series(dates).groupby(dates.to_period("M")).max()})
+    )
+    frame = pd.DataFrame({"date": month_ends})
+    for name, scale in (
+        ("MKT", 0.045), ("SMB", 0.030), ("HML", 0.028), ("MOM", 0.035), ("RMW", 0.025)
+    ):
+        frame[name] = rng.normal(loc=0.004, scale=scale, size=len(frame))
+    frame["rf"] = 0.0012
+    return frame
+
+
+def _disclosures(symbols: tuple[str, ...]) -> pd.DataFrame:
     """Statement-level first disclosures: info_date is the real release date."""
 
     rng = np.random.default_rng(SEED + 1)
     rows = []
     for quarter in QUARTERS:
         end = _quarter_end(quarter)
-        for symbol in SYMBOLS:
+        for symbol in symbols:
             lag = 45 if quarter.endswith("q4") else 30
             info_date = end + pd.Timedelta(f"{int(lag + rng.integers(0, 12))}D")
             rows.append(
@@ -207,14 +248,20 @@ def _write_direct(root: Path, dataset: str, frame: pd.DataFrame) -> None:
     frame.reset_index(drop=True).to_parquet(target / "part-0000.parquet", index=False)
 
 
-def build_fixture(root: Path, defect: str | None) -> dict:
+def build_fixture(
+    root: Path,
+    defect: str | None,
+    periods: int = CALENDAR_PERIODS,
+    symbol_count: int = len(SYMBOLS),
+) -> dict:
     """Materialize one fixture under root and return its planted ground truth."""
 
-    dates = _calendar()
-    bars = _bars(dates)
-    paused, is_st = _market_state(dates)
-    instruments = _instruments(dates)
-    disclosures = _disclosures()
+    dates = _calendar(periods)
+    symbols = _symbols(symbol_count)
+    bars = _bars(dates, symbols)
+    paused, is_st = _market_state(dates, symbols)
+    instruments = _instruments(dates, symbols)
+    disclosures = _disclosures(symbols)
     fundamentals = _fundamentals(disclosures)
     daily_factors = _daily_factors(dates, bars)
     planted: list[dict] = []
@@ -353,6 +400,7 @@ def build_fixture(root: Path, defect: str | None) -> dict:
         ].reset_index(drop=True)
 
     datasets = {
+        "runtime.factor_returns": _factor_returns(dates),
         "rq.instruments": instruments,
         "rq.paused": paused,
         "rq.is_st": is_st,
@@ -373,6 +421,7 @@ def build_fixture(root: Path, defect: str | None) -> dict:
             "rq.daily_factors": int(len(daily_factors)),
             "canonical.fundamentals": int(len(fundamentals)),
             "rq.financials.income": int(len(disclosures)),
+            "runtime.factor_returns": int(len(_factor_returns(dates))),
         },
     }
 
@@ -396,13 +445,15 @@ def _collect(staging: Path, target: Path) -> dict:
 
 
 def build(target_root: Path, selected: tuple[str, ...]) -> dict:
-    dates = _calendar()
     index = {}
     for fixture in selected:
         defect = FIXTURES[fixture]
+        periods = FIXTURE_PERIODS.get(fixture, CALENDAR_PERIODS)
+        symbol_count = FIXTURE_SYMBOLS.get(fixture, len(SYMBOLS))
         with TemporaryDirectory() as staging:
-            ground_truth = build_fixture(Path(staging), defect)
+            ground_truth = build_fixture(Path(staging), defect, periods, symbol_count)
             files = _collect(Path(staging), target_root / fixture)
+        dates = _calendar(periods)
         manifest = {
             "fixture": fixture,
             "profile": "runtime",
@@ -416,7 +467,7 @@ def build(target_root: Path, selected: tuple[str, ...]) -> dict:
                 "end": dates[-1].strftime("%Y-%m-%d"),
                 "sessions": len(dates),
             },
-            "universe": list(SYMBOLS),
+            "universe": list(_symbols(symbol_count)),
             "quarters": list(QUARTERS),
             "caveat": (
                 "Synthetic fixture for agent evaluation only. Price paths carry no economic "

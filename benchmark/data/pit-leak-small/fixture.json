@@ -2,7 +2,7 @@
   "fixture": "pit-leak-small",
   "profile": "runtime",
   "seed": 20261021,
-  "generated_at": "2026-10-21T13:58:27.998349+00:00",
+  "generated_at": "2026-10-27T09:25:28.733256+00:00",
   "generator": "scripts/build_benchmark_data.py",
   "source": "synthetic; seeded pseudo-random walk, no vendor data",
   "license": "same terms as this repository; contains no licensed market data",
@@ -58,9 +58,14 @@
     "rq.bars": 720,
     "rq.daily_factors": 1440,
     "canonical.fundamentals": 40,
-    "rq.financials.income": 40
+    "rq.financials.income": 40,
+    "runtime.factor_returns": 5
   },
   "files": {
+    "canonical/factor_returns/year=2025/part.parquet": {
+      "bytes": 4989,
+      "sha256": "777ab07d63aa61ebaed13cfb27ec971de69d904ec9461eab52913871e8e3d0d8"
+    },
     "canonical/fundamentals/year=2024/part.parquet": {
       "bytes": 10561,
       "sha256": "ec5ff38063fe26b90fbc7f5eb9d0a601d2c0c7fcd5ecd0f5c3fe1f077df64a18"

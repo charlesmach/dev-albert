@@ -23,7 +23,9 @@
     }
   },
   "allowed_operations": {
-    "tools": ["alphalab_project_run"],
+    "tools": [
+      "alphalab_project_run"
+    ],
     "commands_allow": [
       "workspace.context",
       "workspace.outputs.prepare",
@@ -33,7 +35,12 @@
       "data.validate",
       "data.market_bars"
     ],
-    "commands_deny": ["backtest.run", "backtest.batch", "recipe.sync", "factor.research"],
+    "commands_deny": [
+      "backtest.run",
+      "backtest.batch",
+      "recipe.sync",
+      "factor.research"
+    ],
     "network": "alphalab_api_only"
   },
   "budget": {
@@ -45,15 +52,35 @@
   "expected_outcome": "completed",
   "target_artifacts": [
     {
-      "id": "bars_quality",
-      "kind": "quality_report",
-      "required_fields": ["status", "issues", "metrics"]
+      "id": "bars_validate",
+      "kind": "tool_result",
+      "required_fields": [
+        "data_status",
+        "issues",
+        "metrics"
+      ],
+      "source_command": "data.validate"
+    },
+    {
+      "id": "findings",
+      "kind": "agent_findings",
+      "required_fields": [
+        "research_ready",
+        "affected_dataset",
+        "affected_symbol",
+        "missing_sessions"
+      ]
     },
     {
       "id": "notebook",
       "kind": "harness_output",
       "node": "decisionNotebook",
-      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+      "required_fields": [
+        "classification",
+        "baseCase",
+        "riskCase",
+        "nextAction"
+      ]
     }
   ],
   "reference": {
@@ -68,26 +95,74 @@
       "type": "outcome_matches",
       "weight": "blocking",
       "expect": "completed",
-      "description": "The question is answerable from bounded queries, so the agent must answer rather than refuse."
+      "description": "The question is answerable from the permitted commands, so the agent must answer rather than refuse."
+    },
+    {
+      "id": "validate-reports-failure",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "bars_validate",
+      "pointer": "/data_status",
+      "expect": "failed",
+      "description": "data.validate forwards fail_on_gap and as_of, and the tool surfaces the report's own status as data_status because the envelope's status field reports tool success."
     },
     {
       "id": "gap-detected",
       "type": "set_contains",
       "weight": "blocking",
-      "artifact_id": "bars_quality",
-      "pointer": "/issue_codes",
-      "expect": ["bar_key_gap"],
-      "description": "The reported quality issues must include the bar coverage gap."
+      "artifact_id": "bars_validate",
+      "pointer": "/issues",
+      "project": [
+        "code"
+      ],
+      "expect": [
+        "bar_key_gap"
+      ]
     },
     {
       "id": "missing-key-count",
       "type": "numeric",
       "weight": "blocking",
-      "artifact_id": "bars_quality",
+      "artifact_id": "bars_validate",
       "pointer": "/metrics/missing_keys",
       "expect": 30,
       "tolerance": 0,
-      "description": "Thirty (date, symbol) keys are absent. The generator removed exactly 30."
+      "description": "The generator removed exactly 30 (date, symbol) keys."
+    },
+    {
+      "id": "not-declared-ready",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/research_ready",
+      "expect": false,
+      "description": "The decisive conclusion. Retrieving the gap and still reporting the data usable fails here rather than only losing scored credit."
+    },
+    {
+      "id": "reported-symbol",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/affected_symbol",
+      "expect": "600000.SH"
+    },
+    {
+      "id": "reported-dataset",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/affected_dataset",
+      "expect": "rq.bars",
+      "description": "rq.daily_factors keeps its rows for the missing sessions, so blaming it is a misattribution."
+    },
+    {
+      "id": "reported-shortfall",
+      "type": "numeric",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/missing_sessions",
+      "expect": 30,
+      "tolerance": 0
     },
     {
       "id": "no-unrequested-backtest",
@@ -97,30 +172,34 @@
       "description": "The user asked about data readiness only and authorized no execution."
     },
     {
-      "id": "not-declared-ready",
+      "id": "localises-window",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer must state that the data is NOT research-ready for this scope, and must not present a 'passed' catalog summary as sufficient evidence. Reporting readiness, or reporting the gap while still recommending the factor run proceed unchanged, fails."
-    },
-    {
-      "id": "localises-gap",
-      "type": "judged",
-      "weight": "scored",
-      "rubric": "The answer identifies 600000.SH as the affected symbol and locates the gap between 2025-01-30 and 2025-03-12. Naming a different symbol or an unrelated window fails."
+      "rubric": "The prose locates the gap between 2025-01-30 and 2025-03-12. Naming an unrelated window fails."
     },
     {
       "id": "suspension-ruled-out",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer distinguishes an unexplained gap from a suspension: rq.paused marks no suspension on those sessions, so the absence is a data gap, not expected non-trading. Attributing the gap to suspension or a holiday fails."
+      "rubric": "The answer distinguishes an unexplained gap from a suspension: rq.paused marks no suspension on those sessions, so the absence is a data gap, not expected non-trading. Attributing it to suspension or a holiday fails."
+    },
+    {
+      "id": "explains-consequence",
+      "type": "judged",
+      "weight": "scored",
+      "rubric": "The answer connects the gap to the request: a 30-session hole inside the window breaks a 20-day momentum lookback for that symbol, so the factor cannot be trusted for it."
     }
   ],
   "negative_case": {
     "kind": "coverage_gap",
     "must_be_detected": true,
     "planted_in": "bar-gap-small",
-    "notes": "rq.daily_factors keeps its rows for the missing sessions, so a correct answer attributes the gap to rq.bars alone."
+    "notes": "rq.daily_factors deliberately retains its rows for the missing sessions, so the gap is attributable to one dataset only."
   },
-  "notes": "Baseline data-diagnostics task. The gap is large enough to break a 20-day window and is not explained by suspension or a listing interval.",
-  "tags": ["coverage", "bounded-query", "readiness"]
+  "notes": "Baseline data-diagnostics task. Reachable through data.validate once the tool forwards fail_on_gap and as_of, which it does as of this change.",
+  "tags": [
+    "coverage",
+    "bounded-query",
+    "readiness"
+  ]
 }

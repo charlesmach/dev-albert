@@ -27,9 +27,15 @@
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
       "description": "Stable identifier, unique across both splits. Never reused for different content."
     },
-    "schema_version": { "type": "integer", "const": 1 },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
     "split": {
-      "enum": ["dev", "holdout"],
+      "enum": [
+        "dev",
+        "holdout"
+      ],
       "description": "dev tasks may be inspected and debugged against; holdout tasks are confirmation-only and must never be used to tune an agent."
     },
     "category": {
@@ -42,12 +48,24 @@
         "failure_recovery"
       ]
     },
-    "difficulty": { "enum": ["easy", "medium", "hard"] },
-    "title": { "type": "string", "minLength": 1 },
+    "difficulty": {
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
     "request": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["prompt_file", "as_of_date"],
+      "required": [
+        "prompt_file",
+        "as_of_date"
+      ],
       "properties": {
         "prompt_file": {
           "type": "string",
@@ -64,10 +82,20 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["when", "text"],
+            "required": [
+              "when",
+              "text"
+            ],
             "properties": {
-              "when": { "enum": ["clarification_requested", "authorization_requested"] },
-              "text": { "type": "string" }
+              "when": {
+                "enum": [
+                  "clarification_requested",
+                  "authorization_requested"
+                ]
+              },
+              "text": {
+                "type": "string"
+              }
             }
           }
         }
@@ -76,10 +104,17 @@
     "environment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["profile", "fixture", "restore"],
+      "required": [
+        "profile",
+        "fixture",
+        "restore"
+      ],
       "properties": {
         "profile": {
-          "enum": ["runtime", "demo"],
+          "enum": [
+            "runtime",
+            "demo"
+          ],
           "description": "runtime uses a RuntimeStore of rq.* datasets; demo uses the tracked data/ bundle consumed by create_default_engine."
         },
         "fixture": {
@@ -87,18 +122,25 @@
           "description": "Fixture id under benchmark/data/, or 'bundled' for the tracked data/ bundle."
         },
         "workspace": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Path relative to the task directory holding starting project files, or null to start from sdk-v1-default."
         },
         "seed_strategies": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Strategy ids seeded into the task database before the run."
         },
         "restore": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["mode"],
+          "required": [
+            "mode"
+          ],
           "properties": {
             "mode": {
               "const": "copy_to_temp",
@@ -106,7 +148,9 @@
             },
             "env": {
               "type": "object",
-              "additionalProperties": { "type": "string" },
+              "additionalProperties": {
+                "type": "string"
+              },
               "description": "Environment variables set for the attempt. {root} expands to the temporary root."
             }
           }
@@ -116,30 +160,51 @@
     "allowed_operations": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["tools"],
+      "required": [
+        "tools"
+      ],
       "properties": {
         "tools": {
           "type": "array",
           "minItems": 1,
-          "items": { "enum": ["alphalab_project_run", "alphalab_project_files"] }
+          "items": {
+            "enum": [
+              "alphalab_project_run",
+              "alphalab_project_files"
+            ]
+          }
         },
         "commands_allow": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Permitted command values. Absent means every command of the listed tools is permitted."
         },
         "commands_deny": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Commands that must not be invoked. Invoking one is a failure even if the final answer is correct."
         },
         "requires_confirmation": {
           "type": "array",
-          "items": { "enum": ["confirm_python_execution", "confirm_write", "confirm_delete", "confirm_cancel"] },
+          "items": {
+            "enum": [
+              "confirm_python_execution",
+              "confirm_write",
+              "confirm_delete",
+              "confirm_cancel"
+            ]
+          },
           "description": "Confirmation flags that must be preceded by an explicit user authorization turn."
         },
         "network": {
-          "enum": ["none", "alphalab_api_only"],
+          "enum": [
+            "none",
+            "alphalab_api_only"
+          ],
           "default": "alphalab_api_only"
         }
       }
@@ -147,11 +212,23 @@
     "budget": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["max_tool_calls", "max_wall_seconds"],
+      "required": [
+        "max_tool_calls",
+        "max_wall_seconds"
+      ],
       "properties": {
-        "max_tool_calls": { "type": "integer", "minimum": 1 },
-        "max_wall_seconds": { "type": "integer", "minimum": 1 },
-        "max_model_cost_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "max_tool_calls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_wall_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_model_cost_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
         "max_attempts": {
           "type": "integer",
           "minimum": 1,
@@ -161,7 +238,11 @@
       }
     },
     "expected_outcome": {
-      "enum": ["completed", "refused", "clarification_required"],
+      "enum": [
+        "completed",
+        "refused",
+        "clarification_required"
+      ],
       "description": "completed: the task is answerable as written. refused: the correct behavior is to decline, because the request is unauthorized or unsupported. clarification_required: the request is underspecified and the agent must ask before acting. Producing a confident answer where refusal or clarification was correct is a failure, not a partial pass."
     },
     "target_artifacts": {
@@ -170,37 +251,100 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "kind"],
+        "required": [
+          "id",
+          "kind"
+        ],
         "properties": {
-          "id": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
           "kind": {
-            "enum": ["harness_output", "project_file", "backtest_run", "quality_report", "tool_result"]
+            "enum": [
+              "harness_output",
+              "project_file",
+              "backtest_run",
+              "quality_report",
+              "tool_result",
+              "agent_findings"
+            ]
           },
           "node": {
-            "enum": ["decisionNotebook", "workspaceResult", "workspaceCommands"],
+            "enum": [
+              "decisionNotebook",
+              "workspaceResult",
+              "workspaceCommands"
+            ],
             "description": "Required when kind is harness_output."
           },
-          "path": { "type": "string", "description": "Required when kind is project_file." },
-          "required_fields": { "type": "array", "items": { "type": "string" } }
-        }
+          "path": {
+            "type": "string",
+            "description": "Required when kind is project_file."
+          },
+          "required_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_command": {
+            "type": "string",
+            "description": "The Project-Run command whose envelope this artifact is collected from. Required for tool_result and backtest_run, which are shaped by the tool rather than by the agent."
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "tool_result",
+                    "backtest_run"
+                  ]
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "required": [
+                "source_command"
+              ]
+            }
+          }
+        ]
       }
     },
     "reference": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["directory", "expected_file", "independence"],
+      "required": [
+        "directory",
+        "expected_file",
+        "independence"
+      ],
       "properties": {
         "directory": {
           "type": "string",
           "description": "Reference directory, held outside benchmark/tasks so it is never mounted into the agent workspace."
         },
-        "expected_file": { "type": "string" },
+        "expected_file": {
+          "type": "string"
+        },
         "compute": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Script recomputing the expected values from the fixture alone."
         },
         "independence": {
-          "enum": ["ground_truth_from_generator", "closed_form", "independent_recomputation"],
+          "enum": [
+            "ground_truth_from_generator",
+            "closed_form",
+            "independent_recomputation"
+          ],
           "description": "How the reference value avoids circularity. ground_truth_from_generator: the fixture generator planted the condition and recorded it, so the expectation never comes from the code under test."
         }
       }
@@ -211,12 +355,19 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "type", "weight"],
+        "required": [
+          "id",
+          "type",
+          "weight"
+        ],
         "properties": {
-          "id": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
           "type": {
             "enum": [
               "numeric",
+              "scalar_equals",
               "set_contains",
               "set_equals",
               "command_absent",
@@ -228,21 +379,30 @@
             ]
           },
           "weight": {
-            "enum": ["blocking", "scored"],
+            "enum": [
+              "blocking",
+              "scored"
+            ],
             "description": "blocking conditions must all hold for the task to pass; scored conditions contribute to partial credit."
           },
-          "description": { "type": "string" },
+          "description": {
+            "type": "string"
+          },
           "pointer": {
             "type": "string",
-            "description": "JSON Pointer into the artifact identified by artifact_id."
+            "description": "JSON Pointer into the artifact identified by artifact_id. For tool_result artifacts the pointer is resolved against the tool envelope, whose payload sits under /result — see the runner contract in benchmark/README.md."
           },
-          "artifact_id": { "type": "string" },
+          "artifact_id": {
+            "type": "string"
+          },
           "expect": {
             "description": "Expected value. A list for set_* conditions, a number for numeric."
           },
           "project": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "minItems": 1,
             "description": "For set_* conditions over a list of objects: the field names to read from each row, joined with ':' to form one comparable string. Lets a reported table be compared against expect without depending on column order."
           },
@@ -251,8 +411,13 @@
             "minimum": 0,
             "description": "Absolute tolerance for numeric conditions. 0 means exact."
           },
-          "relative_tolerance": { "type": "number", "minimum": 0 },
-          "command": { "type": "string" },
+          "relative_tolerance": {
+            "type": "number",
+            "minimum": 0
+          },
+          "command": {
+            "type": "string"
+          },
           "rubric": {
             "type": "string",
             "description": "Required when type is judged. Judged conditions are never blocking, so a task's pass or fail never depends on a model's opinion."
@@ -260,30 +425,96 @@
         },
         "allOf": [
           {
-            "if": { "properties": { "type": { "const": "judged" } }, "required": ["type"] },
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "judged"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
             "then": {
-              "required": ["rubric"],
-              "properties": { "weight": { "const": "scored" } }
+              "required": [
+                "rubric"
+              ],
+              "properties": {
+                "weight": {
+                  "const": "scored"
+                }
+              }
             }
           },
           {
-            "if": { "properties": { "type": { "const": "numeric" } }, "required": ["type"] },
-            "then": { "required": ["pointer", "expect"] }
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "numeric"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "pointer",
+                "expect"
+              ]
+            }
           },
           {
             "if": {
-              "properties": { "type": { "enum": ["command_absent", "command_present"] } },
-              "required": ["type"]
+              "properties": {
+                "type": {
+                  "enum": [
+                    "command_absent",
+                    "command_present"
+                  ]
+                }
+              },
+              "required": [
+                "type"
+              ]
             },
-            "then": { "required": ["command"] }
+            "then": {
+              "required": [
+                "command"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "scalar_equals"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "required": [
+                "pointer",
+                "expect"
+              ]
+            }
           }
         ]
       }
     },
     "negative_case": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": false,
-      "required": ["kind", "must_be_detected"],
+      "required": [
+        "kind",
+        "must_be_detected"
+      ],
       "properties": {
         "kind": {
           "enum": [
@@ -297,15 +528,26 @@
             "stale_data"
           ]
         },
-        "must_be_detected": { "type": "boolean" },
+        "must_be_detected": {
+          "type": "boolean"
+        },
         "planted_in": {
           "type": "string",
           "description": "Fixture id or artifact where the defect was planted."
         },
-        "notes": { "type": "string" }
+        "notes": {
+          "type": "string"
+        }
       }
     },
-    "notes": { "type": "string" },
-    "tags": { "type": "array", "items": { "type": "string" } }
+    "notes": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
   }
 }

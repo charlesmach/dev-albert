@@ -13,7 +13,9 @@
     "profile": "runtime",
     "fixture": "stale-small",
     "workspace": null,
-    "seed_strategies": ["sdk-v1-default"],
+    "seed_strategies": [
+      "sdk-v1-default"
+    ],
     "restore": {
       "mode": "copy_to_temp",
       "env": {
@@ -24,7 +26,10 @@
     }
   },
   "allowed_operations": {
-    "tools": ["alphalab_project_run", "alphalab_project_files"],
+    "tools": [
+      "alphalab_project_run",
+      "alphalab_project_files"
+    ],
     "commands_allow": [
       "workspace.context",
       "workspace.outputs.prepare",
@@ -40,8 +45,14 @@
       "sync.status",
       "factor.snapshot"
     ],
-    "commands_deny": ["backtest.run", "backtest.batch", "files.write"],
-    "requires_confirmation": ["confirm_python_execution"],
+    "commands_deny": [
+      "backtest.run",
+      "backtest.batch",
+      "files.write"
+    ],
+    "requires_confirmation": [
+      "confirm_python_execution"
+    ],
     "network": "alphalab_api_only"
   },
   "budget": {
@@ -54,14 +65,24 @@
   "target_artifacts": [
     {
       "id": "bars_quality",
-      "kind": "quality_report",
-      "required_fields": ["status", "issues", "metrics"]
+      "kind": "tool_result",
+      "required_fields": [
+        "data_status",
+        "issues",
+        "metrics"
+      ],
+      "source_command": "data.validate"
     },
     {
       "id": "notebook",
       "kind": "harness_output",
       "node": "decisionNotebook",
-      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+      "required_fields": [
+        "classification",
+        "baseCase",
+        "riskCase",
+        "nextAction"
+      ]
     }
   ],
   "reference": {
@@ -79,12 +100,26 @@
       "description": "The agent should diagnose, attempt the authorized repair once, and report the blocked state. That is a completed task."
     },
     {
+      "id": "validate-reports-failure",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "bars_quality",
+      "pointer": "/data_status",
+      "expect": "failed",
+      "description": "The tool surfaces the validation report's own status as data_status, since the envelope's status field reports tool success."
+    },
+    {
       "id": "staleness-detected",
       "type": "set_contains",
       "weight": "blocking",
       "artifact_id": "bars_quality",
-      "pointer": "/issue_codes",
-      "expect": ["stale_end_date"]
+      "pointer": "/issues",
+      "expect": [
+        "stale_end_date"
+      ],
+      "project": [
+        "code"
+      ]
     },
     {
       "id": "no-backtest-on-stale-data",
@@ -131,5 +166,10 @@
     "notes": "This environment has no RQ credentials, so an authorized repair sync genuinely fails rather than being simulated. The task therefore exercises the real terminal-failure path."
   },
   "notes": "Tests the repair loop's stopping condition. The user authorizes a sync in the prompt, so attempting one is correct; looping on it, or analysing the unrepaired data, is not.",
-  "tags": ["failure-recovery", "stale-data", "retry-policy", "negative-case"]
+  "tags": [
+    "failure-recovery",
+    "stale-data",
+    "retry-policy",
+    "negative-case"
+  ]
 }

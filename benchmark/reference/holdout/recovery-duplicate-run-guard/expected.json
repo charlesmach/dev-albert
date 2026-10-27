@@ -31,8 +31,13 @@
   },
   "expected_artifacts": {
     "bars_quality": {
-      "status": "failed",
-      "issue_codes": ["duplicate_keys"]
+      "data_status": "failed",
+      "issues": [
+        {
+          "code": "duplicate_keys"
+        }
+      ],
+      "note": "Reachable through data.validate with no extra flags; duplicate keys are detected unconditionally."
     }
   },
   "common_failure_modes": [

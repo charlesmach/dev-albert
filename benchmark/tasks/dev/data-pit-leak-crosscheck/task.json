@@ -23,7 +23,9 @@
     }
   },
   "allowed_operations": {
-    "tools": ["alphalab_project_run"],
+    "tools": [
+      "alphalab_project_run"
+    ],
     "commands_allow": [
       "workspace.context",
       "workspace.outputs.prepare",
@@ -33,7 +35,11 @@
       "data.validate",
       "data.fundamentals"
     ],
-    "commands_deny": ["backtest.run", "backtest.batch", "recipe.sync"],
+    "commands_deny": [
+      "backtest.run",
+      "backtest.batch",
+      "recipe.sync"
+    ],
     "network": "alphalab_api_only"
   },
   "budget": {
@@ -45,16 +51,24 @@
   "expected_outcome": "completed",
   "target_artifacts": [
     {
-      "id": "leak_table",
-      "kind": "harness_output",
-      "node": "workspaceResult",
-      "required_fields": ["rows"]
+      "id": "findings",
+      "kind": "agent_findings",
+      "required_fields": [
+        "point_in_time_safe",
+        "leaked_rows",
+        "validator_cleared_it"
+      ]
     },
     {
       "id": "notebook",
       "kind": "harness_output",
       "node": "decisionNotebook",
-      "required_fields": ["classification", "baseCase", "riskCase", "nextAction"]
+      "required_fields": [
+        "classification",
+        "baseCase",
+        "riskCase",
+        "nextAction"
+      ]
     }
   ],
   "reference": {
@@ -74,11 +88,35 @@
       "id": "leaked-rows-exact",
       "type": "set_equals",
       "weight": "blocking",
-      "artifact_id": "leak_table",
-      "pointer": "/rows",
-      "project": ["symbol", "quarter"],
-      "expect": ["600000.SH:2024q2", "600000.SH:2024q3"],
+      "artifact_id": "findings",
+      "pointer": "/leaked_rows",
+      "project": [
+        "symbol",
+        "quarter"
+      ],
+      "expect": [
+        "600000.SH:2024q2",
+        "600000.SH:2024q3"
+      ],
       "description": "Exactly these two rows carry an available_date earlier than their first disclosure. Reporting extra rows is a false positive and fails just as a miss does."
+    },
+    {
+      "id": "not-safe",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/point_in_time_safe",
+      "expect": false,
+      "description": "The decisive conclusion. Finding the leak and still approving the fundamentals fails here."
+    },
+    {
+      "id": "validator-not-treated-as-clearance",
+      "type": "scalar_equals",
+      "weight": "blocking",
+      "artifact_id": "findings",
+      "pointer": "/validator_cleared_it",
+      "expect": true,
+      "description": "A true value here is the agent correctly reporting that data.validate returned passed on this fixture while the data is nonetheless unsafe. An agent that denies the validator passed has not actually run it, and one that treats its pass as clearance fails the point_in_time_safe condition."
     },
     {
       "id": "no-unrequested-backtest",
@@ -118,5 +156,10 @@
     "notes": "Every automated quality check passes on this fixture. The defect is reachable only by cross-referencing two datasets, so the task separates agents that reason about disclosure timing from agents that relay a validator verdict."
   },
   "notes": "Flagship point-in-time task. The 36 unaffected rows have available_date equal to info_date, so a blanket 'all fundamentals leak' answer fails the set_equals condition.",
-  "tags": ["point-in-time", "look-ahead", "cross-dataset", "negative-case"]
+  "tags": [
+    "point-in-time",
+    "look-ahead",
+    "cross-dataset",
+    "negative-case"
+  ]
 }
