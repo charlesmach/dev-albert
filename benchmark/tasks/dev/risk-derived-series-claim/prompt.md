@@ -7,3 +7,7 @@ Close with a structured summary:
 - `series_kind` — one of `tradable_portfolio`, `timing_signal`, `descriptive_derived_series`
 - `reported_sharpe` (the Sharpe you're standing behind)
 - `outperformed_market` (true/false)
+
+Deliver that summary as the research-result table, one row per field, with the two columns
+`field` and `value`. Where a field holds several values, give it one row per value; where it
+holds none, give it a single row with an empty value.

@@ -263,8 +263,39 @@ tool-call log. `outcome_matches` compares the classified episode outcome.
 executable reference implementation of these semantics.
 
 **Findings.** Artifacts of kind `agent_findings` are the structured conclusion
-the agent reports. A runner collects it from the agent's `workspaceResult`.
-Every graded field is named in the task's prompt.
+the agent reports. They have no dedicated output field, so each such artifact
+declares a machine-readable `delivery` block and the encoding is part of the
+contract rather than left to the runner.
+
+`workspace-output.schema.json` constrains this tightly: every `workspaceResult`
+variant sets `additionalProperties: false`, and table-row values are restricted
+to `string`, `number`, `boolean` or `null`. A nested `findings` object, a
+findings field at the top level, an array-valued row and an object-valued row
+are therefore all rejected by the real preparation path. The supported encoding
+is the `document` variant's own table:
+
+- `workspaceResult.kind` is `document`, and its `columns` are exactly `field`
+  then `value`. The whole `rows` array is the findings table.
+- A scalar field contributes exactly one row.
+- A list field contributes **one row per element**. An empty list contributes a
+  single row whose `value` is `null`.
+- Composite values arrive **pre-joined** — `leaked_keys` carries
+  `"600000.SH:2024q2"`, not `{symbol, quarter}` — because a row value cannot be
+  an object.
+
+Reading it back: group rows by `field`, then resolve each field by how the task
+grades it. `set_contains` and `set_equals` read a list (`[null]` means the empty
+list); `numeric` and `scalar_equals` read a scalar and require exactly one row.
+That rule is what disambiguates a null scalar from an empty list, and it is
+determined entirely by the task manifest.
+
+`tests/benchmark/test_findings_delivery.py` is the executable version of all of
+this: it encodes each task's expected findings, pushes a complete Harness output
+through `prepare_workspace_outputs`, decodes the delivered table, and applies the
+task's own blocking conditions. It also asserts each unsupported representation
+is rejected, and that a delivered answer with one changed conclusion fails on
+the intended condition and no other. Every graded field is named in the task's
+prompt, which also asks for the table form; a test enforces both.
 
 **Budget and attempts.** `max_attempts` defaults to 1, mirroring the harness
 runtime policy. Exceeding it is a duplicate-execution failure, not a retry.

@@ -83,7 +83,16 @@
         "risk_budget_breached",
         "sizing_recommendation_supported",
         "figures_correct_as_printed"
-      ]
+      ],
+      "delivery": {
+        "channel": "workspaceResult.document.rows",
+        "columns": [
+          "field",
+          "value"
+        ],
+        "list_encoding": "row_per_element",
+        "empty_list": "single_null_row"
+      }
     },
     {
       "id": "notebook",

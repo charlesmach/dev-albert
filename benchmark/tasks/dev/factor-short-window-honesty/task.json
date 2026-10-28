@@ -70,7 +70,16 @@
       "required_fields": [
         "rank_ic_estimable",
         "reported_rank_ic"
-      ]
+      ],
+      "delivery": {
+        "channel": "workspaceResult.document.rows",
+        "columns": [
+          "field",
+          "value"
+        ],
+        "list_encoding": "row_per_element",
+        "empty_list": "single_null_row"
+      }
     },
     {
       "id": "notebook",

@@ -69,7 +69,16 @@
         "affected_dataset",
         "affected_symbol",
         "missing_sessions"
-      ]
+      ],
+      "delivery": {
+        "channel": "workspaceResult.document.rows",
+        "columns": [
+          "field",
+          "value"
+        ],
+        "list_encoding": "row_per_element",
+        "empty_list": "single_null_row"
+      }
     },
     {
       "id": "notebook",

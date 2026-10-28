@@ -46,21 +46,9 @@
   "expected_findings": {
     "point_in_time_safe": false,
     "validator_cleared_it": true,
-    "leaked_rows": [
-      {
-        "symbol": "600000.SH",
-        "quarter": "2024q2",
-        "available_date": "2024-07-05",
-        "disclosed_on": "2024-08-04",
-        "days_early": 30
-      },
-      {
-        "symbol": "600000.SH",
-        "quarter": "2024q3",
-        "available_date": "2024-10-05",
-        "disclosed_on": "2024-11-06",
-        "days_early": 32
-      }
+    "leaked_keys": [
+      "600000.SH:2024q2",
+      "600000.SH:2024q3"
     ]
   }
 }

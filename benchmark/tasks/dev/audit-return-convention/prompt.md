@@ -13,3 +13,7 @@ Close with a structured summary:
 - `sizing_recommendation_supported` (true/false)
 - `figures_correct_as_printed` — which of `total_return`, `annual_return`, `annual_vol`,
   `sharpe`, `max_drawdown`, `observations` need no correction
+
+Deliver that summary as the research-result table, one row per field, with the two columns
+`field` and `value`. Where a field holds several values, give it one row per value; where it
+holds none, give it a single row with an empty value.

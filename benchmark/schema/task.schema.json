@@ -290,6 +290,40 @@
           "source_command": {
             "type": "string",
             "description": "The Project-Run command whose envelope this artifact is collected from. Required for tool_result and backtest_run, which are shaped by the tool rather than by the agent."
+          },
+          "delivery": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "channel",
+              "columns",
+              "list_encoding",
+              "empty_list"
+            ],
+            "description": "How the agent delivers this artifact through the Harness output schema. Required for agent_findings, which has no dedicated output field of its own.",
+            "properties": {
+              "channel": {
+                "const": "workspaceResult.document.rows",
+                "description": "The document-variant workspaceResult carries the findings in its rows array. workspace-output.schema.json sets additionalProperties:false on every variant, so no nested findings object and no extra top-level field is deliverable."
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "The two column keys the findings table declares, in order."
+              },
+              "list_encoding": {
+                "const": "row_per_element",
+                "description": "A list-valued field contributes one row per element. Row values are restricted to scalars, so an array value is rejected by the output schema."
+              },
+              "empty_list": {
+                "const": "single_null_row",
+                "description": "An empty list is delivered as one row whose value is null. Whether a null row means an empty list or a null scalar is resolved by the grading condition: set_contains and set_equals read a list, numeric and scalar_equals read a scalar."
+              }
+            }
           }
         },
         "allOf": [
@@ -310,6 +344,23 @@
             "then": {
               "required": [
                 "source_command"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "agent_findings"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            },
+            "then": {
+              "required": [
+                "delivery"
               ]
             }
           }

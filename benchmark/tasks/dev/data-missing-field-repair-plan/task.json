@@ -71,7 +71,16 @@
         "absent_fields",
         "present_fields",
         "repair_fields"
-      ]
+      ],
+      "delivery": {
+        "channel": "workspaceResult.document.rows",
+        "columns": [
+          "field",
+          "value"
+        ],
+        "list_encoding": "row_per_element",
+        "empty_list": "single_null_row"
+      }
     },
     {
       "id": "notebook",

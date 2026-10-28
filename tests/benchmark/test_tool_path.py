@@ -416,65 +416,6 @@ def test_every_task_grading_findings_asks_the_agent_for_them():
                 f"{task['task_id']} grades {field!r} but never asks the agent for it"
             )
 
-
-ADVERSARIAL = {
-    "data-coverage-gap-scope": (
-        {"research_ready": True, "affected_dataset": "rq.bars",
-         "affected_symbol": "600000.SH", "missing_sessions": 30},
-        "not-declared-ready",
-    ),
-    "factor-rank-ic-evidence": (
-        {"predictive_power_supported": True, "inverted_signal_supported": False,
-         "interval_contains_zero": True},
-        "no-predictive-power-claim",
-    ),
-    "audit-return-convention": (
-        {"report_sound": False, "defect": "wrong_annualisation_factor",
-         "corrected_annual_vol": 0.09340392304414424, "risk_budget_breached": True,
-         "sizing_recommendation_supported": False,
-         "figures_correct_as_printed": ["total_return", "max_drawdown", "observations"]},
-        "risk-budget-breached",
-    ),
-    "strategy-backtest-pinned-metrics": (
-        {"reported_sharpe": 0.16798883169801535, "execution_reliable": True,
-         "all_targets_filled": False},
-        "reported-sharpe-matches",
-    ),
-    "risk-derived-series-claim": (
-        {"tradable_signal": True, "series_kind": "descriptive_derived_series",
-         "reported_sharpe": -0.334054745536095, "outperformed_market": False},
-        "not-tradable",
-    ),
-    "data-pit-leak-crosscheck": (
-        {"point_in_time_safe": True, "validator_cleared_it": True,
-         "leaked_rows": [{"symbol": "600000.SH", "quarter": "2024q2"},
-                          {"symbol": "600000.SH", "quarter": "2024q3"}]},
-        "not-safe",
-    ),
-}
-
-
-@pytest.mark.parametrize("task_id", sorted(ADVERSARIAL))
-def test_a_materially_wrong_conclusion_fails_its_blocking_condition(task_id):
-    """The reviewer's acceptance check: right numbers, wrong verdict must fail.
-
-    Each payload below carries the correct retrieved values and exactly one
-    wrong conclusion, so only the named condition may reject it.
-    """
-
-    findings, expected_failure = ADVERSARIAL[task_id]
-    task = next(item for item in _tasks() if item["task_id"] == task_id)
-    findings_ids = {
-        a["id"] for a in task["target_artifacts"] if a["kind"] == "agent_findings"
-    }
-    failed = [
-        condition["id"]
-        for condition in task["pass_conditions"]
-        if condition["weight"] == "blocking"
-        and condition["type"] in POINTER_TYPES
-        and condition["artifact_id"] in findings_ids
-        and not evaluate(condition, _resolve(findings, condition["pointer"]))
-    ]
-    assert failed == [expected_failure], (
-        f"{task_id}: expected only {expected_failure!r} to reject the adversarial answer, got {failed}"
-    )
+# Adversarial cases live in test_findings_delivery.py, which applies them to a
+# findings table that has been through the real output-preparation path. Testing
+# them here as well would duplicate the list against a weaker boundary.

@@ -7,3 +7,7 @@ should put on them.
 Close with a structured summary: `reported_sharpe` (the Sharpe you're standing behind),
 `execution_reliable` (true/false), and `all_targets_filled` (true/false — did every target
 weight actually get filled?).
+
+Deliver that summary as the research-result table, one row per field, with the two columns
+`field` and `value`. Where a field holds several values, give it one row per value; where it
+holds none, give it a single row with an empty value.
