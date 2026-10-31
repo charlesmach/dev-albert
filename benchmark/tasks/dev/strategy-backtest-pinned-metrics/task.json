@@ -68,8 +68,9 @@
       "kind": "backtest_run",
       "required_fields": [
         "metrics",
-        "diagnostics",
-        "return_periods_per_year"
+        "execution_reliable",
+        "successful_trade_count",
+        "cash_rejection_count"
       ],
       "source_command": "backtest.summary"
     },
@@ -150,7 +151,7 @@
       "pointer": "/metrics/sharpe",
       "expect": 0.7698215371633523,
       "tolerance": 1e-06,
-      "description": "The summary also carries return_periods_per_year, which is 252 here, so the cadence is handed to the agent rather than inferred."
+      "description": "Daily returns annualise at 252. Reporting 0.168 means the series was annualised as monthly. The summary contract does not state the cadence, so an agent that needs it must read the robustness report; this task only requires the figure be right."
     },
     {
       "id": "reported-sharpe-matches",
@@ -178,7 +179,7 @@
       "artifact_id": "findings",
       "pointer": "/all_targets_filled",
       "expect": false,
-      "description": "376 of 376 attempted trades succeeded, but 22 target weights were rejected for cash. Claiming every target was filled fails."
+      "description": "The real summary spreads its execution counters at the top level: 376 of 376 attempted trades succeeded, but 22 target weights were rejected for cash. Claiming every target was filled fails."
     },
     {
       "id": "source-pinned-without-hashes",

@@ -43,7 +43,8 @@
       "backtest.wait",
       "backtest.summary",
       "backtest.analysis",
-      "backtest.validation"
+      "backtest.validation",
+      "backtest.robustness"
     ],
     "commands_deny": [
       "recipe.sync",
@@ -68,10 +69,19 @@
       "kind": "backtest_run",
       "required_fields": [
         "metrics",
-        "diagnostics",
-        "return_periods_per_year"
+        "execution_reliable",
+        "successful_trade_count",
+        "cash_rejection_count"
       ],
       "source_command": "backtest.summary"
+    },
+    {
+      "id": "cadence",
+      "kind": "tool_result",
+      "source_command": "backtest.robustness",
+      "required_fields": [
+        "result"
+      ]
     },
     {
       "id": "findings",
@@ -123,11 +133,11 @@
       "id": "cadence-is-daily",
       "type": "numeric",
       "weight": "blocking",
-      "artifact_id": "summary",
-      "pointer": "/return_periods_per_year",
+      "artifact_id": "cadence",
+      "pointer": "/result/return_periods_per_year",
       "expect": 252,
       "tolerance": 0,
-      "description": "The summary hands the agent the cadence outright, so the report's monthly annualisation is contradicted by data the agent holds."
+      "description": "The production backtest.summary contract does not carry the cadence: build_backtest_summary returns no return_periods_per_year and no diagnostics wrapper. The robustness report does return it, so the agent has to reach the command that actually exposes the evidence rather than invent the field."
     },
     {
       "id": "correct-annual-vol",

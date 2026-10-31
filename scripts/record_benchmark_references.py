@@ -32,10 +32,13 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BENCHMARK = REPO_ROOT / "benchmark"
 LEGACY_DB = REPO_ROOT / "tests" / "fixtures" / "legacy_app.db"
+PAYLOAD_FIXTURE = REPO_ROOT / "tests" / "benchmark" / "production_payloads.json"
 PROJECT_ID = "sdk-v1-default"
 FACTOR_ID = "momentum_20d"
 BACKTEST_WINDOW = ("2025-02-03", "2026-12-31")
-RESEARCH_WINDOW = ("2025-02-03", "2027-12-01")
+# The factor and derived-risk prompts ask for the full history available, so the
+# references must use the fixture's own span rather than a hidden later start.
+RESEARCH_WINDOW = ("2025-01-02", "2027-12-01")
 SHORT_WINDOW = ("2025-02-03", "2025-05-07")
 RISK_EXPRESSION = ("defensive_tilt", "MKT - 0.5 * SMB")
 TOLERANCE = 1e-9
@@ -78,7 +81,8 @@ def _backtest(tmp: Path) -> dict:
     }
 
 
-def _research(tmp: Path, label: str, fixture: str, window: tuple[str, str]) -> dict:
+def _research(tmp: Path, label: str, fixture: str, window: tuple[str, str],
+              *, full: bool = False) -> dict:
     from alphalab import create_runtime_engine, evaluate_factor_research
 
     root = _runtime_root(tmp, fixture, label)
@@ -90,8 +94,28 @@ def _research(tmp: Path, label: str, fixture: str, window: tuple[str, str]) -> d
         )
     finally:
         repository.close()
+    if full:
+        return result
     return {"status": result["status"], "periods": result["periods"], "summary": result["summary"]}
 
+
+# The production summary contract has no return_periods_per_year and no
+# diagnostics wrapper; execution counters sit at the top level. Recording it
+# from the production run path keeps the contract tests honest instead of
+# asserting against a hand-written shape.
+_PAYLOAD_SCRIPT = """
+import json, sys
+from apps.api.services import backtest_analytics_service, result_service, strategy_service
+start, end = sys.argv[1:3]
+run = strategy_service.run_project_backtest(
+    "sdk-v1-default", start, end, "runtime", strategy_id="main"
+)
+backtest_id = str(run.get("backtest_id") or run.get("id"))
+print(json.dumps({
+    "summary": result_service.get_backtest_summary(backtest_id),
+    "robustness": backtest_analytics_service.analyze_robustness(backtest_id),
+}, default=str))
+"""
 
 _RISK_SCRIPT = """
 import json, sys
@@ -100,19 +124,14 @@ name, expression, start, end = sys.argv[1:5]
 result = market_analytics_service.compute_custom_risk_factor(
     name, expression, "runtime", start, end
 )
-print(json.dumps({
-    "dependencies": result["dependencies"],
-    "summary": result["summary"],
-    "warnings": result["warnings"],
-    "observations": len(result["returns"]),
-}))
+print(json.dumps({**result, "observations": len(result["returns"])}, default=str))
 """
 
 
-def _market_risk(tmp: Path) -> dict:
+def _market_risk(tmp: Path, *, label: str = "risk", full: bool = False) -> dict:
     """Record in a subprocess: the service binds the runtime root at import time."""
 
-    root = _runtime_root(tmp, "research-small", "risk")
+    root = _runtime_root(tmp, "research-small", label)
     name, expression = RISK_EXPRESSION
     environment = {**os.environ, "ALPHALAB_RUNTIME_DIR": str(root)}
     completed = subprocess.run(
@@ -123,7 +142,79 @@ def _market_risk(tmp: Path) -> dict:
         raise SystemExit(
             "Could not record the market-risk reference:\n" + (completed.stderr or "").strip()
         )
-    return json.loads(completed.stdout.strip().splitlines()[-1])
+    recorded = json.loads(completed.stdout.strip().splitlines()[-1])
+    return recorded if full else {key: recorded[key] for key in
+                                   ("dependencies", "summary", "warnings", "observations")}
+
+
+def _production_payloads(tmp: Path) -> dict:
+    """Record the real backtest.summary and backtest.robustness API payloads.
+
+    Runs in a subprocess because the services bind their store and runtime roots
+    at import time.
+    """
+
+    root = _runtime_root(tmp, "research-small", "payload")
+    seed = tmp / "payload-seed"
+    seed.mkdir()
+    shutil.copy2(LEGACY_DB, seed / "alphalab.db")
+    environment = {
+        **os.environ,
+        "ALPHALAB_RUNTIME_DIR": str(root),
+        "ALPHALAB_APP_DATA_DIR": str(seed),
+        "ALPHALAB_CACHE_DIR": str(tmp / "payload-cache"),
+    }
+    completed = subprocess.run(
+        [sys.executable, "-c", _PAYLOAD_SCRIPT, *BACKTEST_WINDOW],
+        cwd=REPO_ROOT, env=environment, capture_output=True, text=True, check=False,
+    )
+    if completed.returncode != 0:
+        raise SystemExit(
+            "Could not record the production payloads:\n" + (completed.stderr or "").strip()
+        )
+    payloads = json.loads(completed.stdout.strip().splitlines()[-1])
+    # Volatile identifiers would churn the committed fixture on every recording.
+    for volatile in ("backtest_id", "project_id", "strategy_id", "strategy_name", "samples"):
+        payloads["summary"].pop(volatile, None)
+    for volatile in ("id", "strategy_id"):
+        payloads["robustness"].pop(volatile, None)
+
+    # Every other API shape the contract tests rely on, recorded the same way so
+    # none of them is a hand-written guess at production.
+    payloads["research"] = _research(
+        tmp, "payload-research", "research-small", RESEARCH_WINDOW, full=True
+    )
+    payloads["research_insufficient"] = _research(
+        tmp, "payload-short", "clean-small", SHORT_WINDOW, full=True
+    )
+    payloads["market_risk"] = _market_risk(tmp, label="payload-risk", full=True)
+    payloads["validate"] = _validate(tmp, "bar-gap-small", fail_on_gap=True)
+    payloads["validate_stale"] = _validate(tmp, "stale-small", fail_on_gap=True)
+    payloads["validate_duplicates"] = _validate(tmp, "duplicate-keys-small", fail_on_gap=False)
+    payloads["query"] = _query(tmp, "missing-field-small")
+    return payloads
+
+
+def _validate(tmp: Path, fixture: str, *, fail_on_gap: bool) -> dict:
+    """The real data-tool registry response for one fixture."""
+
+    from alphalab.tools import create_data_tool_registry
+
+    root = _runtime_root(tmp, fixture, f"validate-{fixture}")
+    arguments = {"dataset": "rq.bars"}
+    if fail_on_gap:
+        arguments.update(fail_on_gap=True, as_of="2025-05-07")
+    return create_data_tool_registry(root=root).invoke("data.validate", arguments)
+
+
+def _query(tmp: Path, fixture: str) -> dict:
+    from alphalab.tools import create_data_tool_registry
+
+    root = _runtime_root(tmp, fixture, f"query-{fixture}")
+    return create_data_tool_registry(root=root).invoke(
+        "data.query",
+        {"dataset": "rq.daily_factors", "columns": ["date", "symbol", "field", "value"], "limit": 5},
+    )
 
 
 def record() -> dict:
@@ -134,6 +225,7 @@ def record() -> dict:
             "runtime_research": _research(tmp, "research", "research-small", RESEARCH_WINDOW),
             "clean_research": _research(tmp, "clean", "clean-small", SHORT_WINDOW),
             "market_risk": _market_risk(tmp),
+            "production_payloads": _production_payloads(tmp),
         }
 
 
@@ -222,13 +314,24 @@ def main() -> None:
             json.dumps(recorded, ensure_ascii=False, indent=2, default=str) + "\n",
             encoding="utf-8",
         )
+    serialized = json.dumps(recorded["production_payloads"], ensure_ascii=False,
+                            indent=2, sort_keys=True) + "\n"
     if args.check:
+        current = PAYLOAD_FIXTURE.read_text(encoding="utf-8") if PAYLOAD_FIXTURE.exists() else ""
+        if current != serialized:
+            raise SystemExit(
+                "tests/benchmark/production_payloads.json no longer matches the production "
+                "summary and robustness contract; rerun "
+                "python -m scripts.record_benchmark_references"
+            )
         drift = check(recorded)
         if drift:
             raise SystemExit("Benchmark reference values drifted:\n  " + "\n  ".join(drift))
         print(json.dumps({"status": "current", "checked": sorted(recorded)}, indent=2))
         return
-    print(json.dumps(recorded, ensure_ascii=False, indent=2, default=str))
+    PAYLOAD_FIXTURE.write_text(serialized, encoding="utf-8")
+    print(json.dumps({"payload_fixture": str(PAYLOAD_FIXTURE.relative_to(REPO_ROOT)),
+                      "recorded": sorted(recorded)}, indent=2))
 
 
 if __name__ == "__main__":

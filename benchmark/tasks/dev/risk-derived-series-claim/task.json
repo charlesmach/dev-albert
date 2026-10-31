@@ -127,8 +127,9 @@
       "weight": "blocking",
       "artifact_id": "risk_series",
       "pointer": "/result/summary/sharpe",
-      "expect": -0.334054745536095,
-      "tolerance": 1e-06
+      "expect": -0.3103760870289155,
+      "tolerance": 1e-06,
+      "description": "Pins the evaluated window to the project's full history, which is what the prompt asks for."
     },
     {
       "id": "not-tradable",
@@ -154,7 +155,7 @@
       "weight": "blocking",
       "artifact_id": "findings",
       "pointer": "/reported_sharpe",
-      "expect": -0.334054745536095,
+      "expect": -0.3103760870289155,
       "tolerance": 0.0001,
       "description": "The Sharpe is negative. Reporting a positive number, or omitting the sign, misrepresents the series the user asked about."
     },
@@ -190,7 +191,7 @@
       "id": "notes-weak-consistency",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer notes the series is near coin-flip month to month — positive in about 51% of the 35 observations — so even as description it supports no directional claim."
+      "rubric": "The answer notes the series is near coin-flip month to month — positive in about 53% of the 36 observations — so even as description it supports no directional claim."
     },
     {
       "id": "offers-legitimate-use",

@@ -9,7 +9,7 @@
     "project_id": "sdk-v1-default",
     "factor_id": "momentum_20d",
     "profile": "runtime",
-    "start_date": "2025-02-03",
+    "start_date": "2025-01-02",
     "end_date": "2027-12-01",
     "frequency": "monthly",
     "quantiles": 5,
@@ -24,26 +24,26 @@
   },
   "ground_truth": {
     "status": "sufficient",
-    "periods": 33,
+    "periods": 34,
     "summary": {
-      "mean_rank_ic": 0.01619762351469669,
-      "rank_ic_std": 0.18159434151090553,
-      "icir": 0.30898657585806116,
-      "newey_west_t_stat": 0.5468713650972897,
-      "positive_ic_ratio": 0.6060606060606061,
+      "mean_rank_ic": 0.010098223154177246,
+      "rank_ic_std": 0.1823241841452239,
+      "icir": 0.19186303398206225,
+      "newey_west_t_stat": 0.3339081292265366,
+      "positive_ic_ratio": 0.5882352941176471,
       "average_coverage": 1.0,
-      "average_top_turnover": 0.7734375,
+      "average_top_turnover": 0.7765151515151515,
       "bootstrap_mean_ic_95": {
-        "lower": -0.04602507248848713,
-        "upper": 0.07139718005571655
+        "lower": -0.05012043372696171,
+        "upper": 0.06612542765699153
       },
       "long_short": {
-        "total_return": -0.14432470597966318,
-        "annual_return": -0.05510165509817577,
-        "annual_vol": 0.16764871804537307,
-        "sharpe": -0.25314657990293626,
-        "max_drawdown": -0.2532966825822548,
-        "n_periods": 33
+        "total_return": -0.17930690663112547,
+        "annual_return": -0.06736681811492329,
+        "annual_vol": 0.16657324601567336,
+        "sharpe": -0.33391084694509493,
+        "max_drawdown": -0.31369716077591736,
+        "n_periods": 34
       }
     },
     "engine_warnings": [
@@ -52,19 +52,20 @@
     "predictive_power_supported": false,
     "inverted_signal_supported": false,
     "interval_contains_zero": true,
-    "correct_conclusion": "No reliable evidence of predictive power. Mean Rank IC is +0.016 — positive, which is the trap — but the Newey-West t-statistic is 0.55 and the 95% bootstrap interval [-0.046, 0.071] spans zero. The long-short spread points the other way entirely at -14.4% total and a Sharpe of -0.25, which is further evidence of noise rather than a case for inverting the signal. Neither direction is supported."
+    "correct_conclusion": "No reliable evidence of predictive power. Mean Rank IC is +0.010 — positive, which is the trap — but the Newey-West t-statistic is 0.33 and the 95% bootstrap interval [-0.050, 0.066] spans zero. The long-short spread points the other way entirely at -17.9% total and a Sharpe of -0.33, which is further evidence of noise rather than a case for inverting the signal. Neither direction is supported."
   },
   "common_failure_modes": [
-    "Reading the positive mean Rank IC as a usable edge while ignoring the t-statistic and the interval.",
+    "Reading the positive mean Rank IC as a usable edge while ignoring the t-statistic and interval.",
     "Concluding the factor works inverted because the long-short spread is negative.",
     "Reporting the interval but describing it as excluding zero.",
     "Presenting the long-short diagnostic as a backtest of the default strategy.",
-    "Pointing at /status or /periods at the envelope root, where /status is the tool's own 'succeeded'.",
-    "Running a different window and reporting its numbers; the periods condition catches this."
+    "Pointing at /status or /periods at the envelope root, where /status is the tool's 'succeeded'.",
+    "Evaluating a narrower window than the full history; the periods condition catches this."
   ],
   "expected_findings": {
     "predictive_power_supported": false,
     "inverted_signal_supported": false,
     "interval_contains_zero": true
-  }
+  },
+  "window_matches_the_prompt": "The prompt asks for the full history available, so the invocation spans the fixture's own 2025-01-02 to 2027-12-01. An earlier draft recorded a 2025-02-03 start that the prompt never stated, which rejected the values a correct agent would produce."
 }

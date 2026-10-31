@@ -127,9 +127,9 @@
       "weight": "blocking",
       "artifact_id": "research",
       "pointer": "/result/periods",
-      "expect": 33,
+      "expect": 34,
       "tolerance": 0,
-      "description": "Pins the evaluated window. A different period count means a different window was run."
+      "description": "Pins the evaluated window to the full fixture history the prompt asks for, 2025-01-02 to 2027-12-01. A count of 33 means a later start was used than the request describes."
     },
     {
       "id": "mean-rank-ic",
@@ -137,7 +137,7 @@
       "weight": "blocking",
       "artifact_id": "research",
       "pointer": "/result/summary/mean_rank_ic",
-      "expect": 0.01619762351469669,
+      "expect": 0.010098223154177246,
       "tolerance": 1e-09
     },
     {
@@ -146,7 +146,7 @@
       "weight": "blocking",
       "artifact_id": "research",
       "pointer": "/result/summary/newey_west_t_stat",
-      "expect": 0.5468713650972897,
+      "expect": 0.3339081292265366,
       "tolerance": 1e-09
     },
     {
@@ -156,7 +156,7 @@
       "artifact_id": "findings",
       "pointer": "/predictive_power_supported",
       "expect": false,
-      "description": "The decisive conclusion. Mean Rank IC is +0.016 with a Newey-West t of 0.55 and a bootstrap interval spanning zero, so the evidence does not support predictive power. A positive IC sign is the trap: reporting the right numbers and concluding the factor works fails here, not merely in scored credit."
+      "description": "The decisive conclusion. Mean Rank IC is +0.010 with a Newey-West t of 0.33 and a bootstrap interval spanning zero, so the evidence does not support predictive power. A positive IC sign is the trap: reporting the right numbers and concluding the factor works fails here."
     },
     {
       "id": "no-inverted-claim",
@@ -165,7 +165,7 @@
       "artifact_id": "findings",
       "pointer": "/inverted_signal_supported",
       "expect": false,
-      "description": "The long-short spread is negative (-0.144 total, Sharpe -0.253) while mean IC is positive. Neither direction is supported; recommending the reversed signal is the symmetric failure."
+      "description": "The long-short spread is negative (-0.179 total, Sharpe -0.334) while mean IC is positive. Neither direction is supported."
     },
     {
       "id": "interval-read-correctly",
@@ -174,7 +174,7 @@
       "artifact_id": "findings",
       "pointer": "/interval_contains_zero",
       "expect": true,
-      "description": "The 95% bootstrap interval is [-0.046, 0.071]. An agent that reports the interval but reads it as excluding zero fails."
+      "description": "The 95% bootstrap interval is [-0.050, 0.066]. An agent that reports it but reads it as excluding zero fails."
     },
     {
       "id": "no-unrequested-backtest",
@@ -187,7 +187,7 @@
       "id": "reconciles-ic-and-spread",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer notes the tension between a mildly positive mean Rank IC and a negative long-short spread, and treats it as further evidence of noise rather than silently reporting whichever number suits a conclusion."
+      "rubric": "The answer notes the tension between a mildly positive mean Rank IC and a negative long-short spread, and treats it as further evidence of noise rather than reporting whichever number suits a conclusion."
     },
     {
       "id": "factor-versus-strategy",
@@ -199,11 +199,11 @@
       "id": "surfaces-caveat",
       "type": "judged",
       "weight": "scored",
-      "rubric": "The answer surfaces at least one material caveat from the result: the engine's own warning that the bootstrap interval is not strictly positive, average top-quantile turnover of 0.773, or that this is a synthetic development fixture with no economic meaning."
+      "rubric": "The answer surfaces at least one material caveat: the engine's own warning that the bootstrap interval is not strictly positive, average top-quantile turnover of 0.777, or that this is a synthetic development fixture."
     }
   ],
   "negative_case": null,
-  "notes": "Runs on the runtime profile, the only profile Project-Run requests. The honest answer is negative despite a positive IC sign, and the conclusion fields are blocking so correct numbers with the wrong verdict cannot pass.",
+  "notes": "Runs on the runtime profile over the fixture's full history, which is what the prompt asks for. The honest answer is negative despite a positive IC sign, and the conclusion fields are blocking so correct numbers with the wrong verdict cannot pass.",
   "tags": [
     "rank-ic",
     "factor-evidence",

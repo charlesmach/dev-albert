@@ -137,7 +137,9 @@ Two are worth calling out because they are invisible to the existing checks:
   a genuine `PerformanceMetrics.summarize` output with only `periods_per_year`
   wrong (12 on a daily series). Total return and max drawdown are correct as
   printed, so a plausibility spot check finds nothing — while
-  `backtest.summary` hands the agent `return_periods_per_year: 252` outright.
+  the cadence is available from `backtest.robustness` as
+  `return_periods_per_year: 252`, so the agent has to reach the command that
+  carries the evidence. `backtest.summary` does **not** report it.
   The corrected volatility is 9.34% against a stated 15% budget, so the budget
   is **not** breached: the task rejects both the agent that accepts the report
   and the one that reflexively inverts every claim in it.
@@ -240,6 +242,7 @@ the pointers differ by command:
 | `factor.research` | `{status, command, project_id, revision, result:{…}}` | `/result` |
 | `market_risk.evaluate` | `{status, command, result:{…}}` | `/result` |
 | `backtest.summary` | API payload passed through flat | top level |
+| `backtest.robustness` | `{status, command, result:{…}}` | `/result` |
 
 Three details a runner must not rediscover the hard way:
 
@@ -251,7 +254,19 @@ Three details a runner must not rediscover the hard way:
   scrubs any 40–64 character hex token from results, so digests cannot
   round-trip through the agent at all.
 - Arrays longer than ten entries are replaced by
-  `{count, head, tail, truncated}`. `/result/universe` is an object, not a list.
+  `{count, head, tail, truncated}`, so `/result/rows` is an object, not a list.
+  Arrays of ten or fewer survive intact, which is why `/result/warnings` stays a
+  list.
+- `build_backtest_summary` returns **no** `return_periods_per_year` and **no**
+  `diagnostics` wrapper; its execution counters
+  (`execution_reliable`, `execution_fidelity`, `attempted_trade_count`,
+  `successful_trade_count`, `cash_rejection_count`, …) sit at the top level. The
+  cadence comes from `backtest.robustness` instead. Every API response the
+  contract tests use is recorded from the production run path into
+  `tests/benchmark/production_payloads.json`; refresh it with
+  `python -m scripts.record_benchmark_references`, whose `--check` fails if the
+  recording drifts from production. Hand-writing one of these payloads is how an
+  earlier draft came to grade a field production never returns.
 
 **Condition types.** `numeric` compares at `tolerance`. `scalar_equals`
 compares one value, using identity for booleans and null so `0` does not match
@@ -301,6 +316,28 @@ prompt, which also asks for the table form; a test enforces both.
 runtime policy. Exceeding it is a duplicate-execution failure, not a retry.
 Exceeding `max_tool_calls` or `max_wall_seconds` ends the episode; record the
 partial result rather than extending the budget.
+
+`max_tool_calls` counts **every tool invocation the agent issues in the
+episode**, not only AlphaLab business calls. That includes the harness's own
+`find` / `observe` discovery and observation calls, document create and edit
+calls, `request_user_input`, `complete`, and each
+`alphalab_project_run` / `alphalab_project_files` call. Model completions are
+**not** tool calls and are bounded by `max_model_cost_usd` instead.
+
+Two cases a runner must settle the same way every time:
+
+- **Parallel batches.** A batch of *n* tool calls counts as *n*, not one. The
+  budget measures work requested of the environment, not round trips.
+- **A batch that would exceed the budget.** Count every call in it as
+  *attempted*, reject the whole batch, and end the episode. None of its calls
+  are *executed*, so none may be treated as evidence. Recording a rejected batch
+  as zero would let an agent probe past its budget for free; executing part of
+  it would make the cutoff depend on batch ordering.
+
+Report attempted and executed counts separately. An attempt that the guard
+blocked before dispatch is still an attempt for `command_absent` purposes — a
+task that forbids `backtest.run` fails if the agent tried it, whether or not the
+call reached the backend.
 
 **Scripted follow-ups.** Three tasks declare `request.follow_ups`, replayed only
 when the agent asks. All three withhold what was asked for, so an agent that

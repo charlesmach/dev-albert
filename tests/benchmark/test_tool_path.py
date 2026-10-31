@@ -24,78 +24,14 @@ ROOT = Path(__file__).resolve().parents[2]
 BENCHMARK = ROOT / "benchmark"
 TOOL = ROOT / "integrations" / "conexus" / "alphalab-research-agent" / "tools" / "Project-Run.tool.json"
 
-# One representative API response per endpoint the benchmark's commands touch.
-# Values mirror the recorded references so the shapes are the real ones.
-API_RESPONSES = {
-    "validate": {
-        "dataset": "rq.bars", "status": "failed", "rows": 690, "files": 5,
-        "metrics": {"missing_keys": 30, "symbol_count": 8},
-        "issues": [{"code": "bar_key_gap", "message": "30 keys absent", "severity": "error"}],
-    },
-    "query": {
-        "dataset": "rq.daily_factors",
-        "rows": [{"date": "2025-01-02", "symbol": "600000.SH", "field": "market_cap", "value": 1.8e9}],
-        "truncated": False,
-    },
-    "research": {
-        "project_id": "p1", "revision": 3, "source_sha256": "ab" * 32, "profile": "runtime",
-        "factor_id": "momentum_20d", "status": "sufficient", "periods": 33,
-        "summary": {
-            "mean_rank_ic": 0.01619762351469669, "icir": 0.30898657585806116,
-            "newey_west_t_stat": 0.5468713650972897, "positive_ic_ratio": 0.6060606060606061,
-            "bootstrap_mean_ic_95": {"lower": -0.046, "upper": 0.0714},
-            "long_short": {"total_return": -0.1443, "sharpe": -0.2531},
-        },
-        "universe": [f"S{index}" for index in range(40)],
-        "rows": [{"date": f"d{index}"} for index in range(33)],
-        "warnings": ["The 95% bootstrap interval for mean Rank IC is not strictly positive"],
-        "stdout": "", "stderr": "",
-    },
-    "summary": {
-        "backtest_id": "bt-1", "status": "succeeded",
-        "metrics": {
-            "total_return": 0.14310151130797033, "annual_return": 0.06987590185630843,
-            "annual_vol": 0.09340392304414424, "sharpe": 0.7698215371633523,
-            "max_drawdown": -0.12911394173093294, "n_periods": 499,
-        },
-        "diagnostics": {
-            "execution_data_policy": "strict", "execution_reliable": True,
-            "execution_invalid_reasons": [],
-            "execution_fidelity": {"mean": 0.9995502024089159},
-            "execution_summary": {"attempted_trade_count": 376, "successful_trade_count": 376,
-                                   "cash_rejection_count": 22},
-        },
-        "return_periods_per_year": 252,
-    },
-    "validate_stale": {
-        "dataset": "rq.bars", "status": "failed", "rows": 600, "files": 5,
-        "metrics": {"missing_keys": 0, "date_end": "2025-04-16"},
-        "issues": [{"code": "stale_end_date", "message": "bars end early", "severity": "error"}],
-    },
-    "validate_duplicates": {
-        "dataset": "rq.bars", "status": "failed", "rows": 725, "files": 5,
-        "metrics": {"missing_keys": 0},
-        "issues": [{"code": "duplicate_keys", "message": "duplicate primary keys", "severity": "error"}],
-    },
-    "research_insufficient": {
-        "project_id": "p1", "revision": 3, "profile": "runtime", "factor_id": "momentum_20d",
-        "status": "insufficient", "periods": 0,
-        "summary": {"mean_rank_ic": None, "rank_ic_std": None, "icir": None,
-                     "newey_west_t_stat": None, "positive_ic_ratio": None,
-                     "average_coverage": None, "average_top_turnover": None},
-        "warnings": ["Fewer than 24 valid factor periods; holdout evidence is insufficient"],
-    },
-    "risk": {
-        "profile": "runtime", "name": "defensive_tilt", "expression": "MKT - 0.5 * SMB",
-        "dependencies": ["MKT", "SMB"],
-        "dates": [f"2025-{index % 12 + 1:02d}-28" for index in range(35)],
-        "returns": [0.001] * 35, "cumulative": [0.01] * 35,
-        "summary": {"observations": 35, "annual_return": -0.06788236189028851,
-                     "annual_volatility": 0.16801427992835594, "sharpe": -0.334054745536095,
-                     "max_drawdown": -0.3166195915601283, "positive_ratio": 0.5142857142857142},
-        "warnings": ["This is a descriptive derived return series, not a tradable portfolio or timing signal."],
-    },
-}
+# Every API response below is recorded from production, never written by hand.
+# The earlier hand-written summary invented return_periods_per_year and a nested
+# diagnostics wrapper, neither of which build_backtest_summary returns, and the
+# mock hid that from the contract tests. Refresh with
+# python -m scripts.record_benchmark_references; --check fails on drift.
+API_RESPONSES = json.loads(
+    Path(__file__).with_name("production_payloads.json").read_text(encoding="utf-8")
+)
 
 # The commands the task set collects artifacts from, with arguments a task would send.
 INVOCATIONS = {
@@ -108,6 +44,7 @@ INVOCATIONS = {
                                    "start_date": "2025-02-03", "end_date": "2027-12-01",
                                    "quantiles": 5, "horizons": [1, 3, 6]}},
     "backtest.summary": {"command": "backtest.summary", "args": {"backtest_id": "bt-1"}},
+    "backtest.robustness": {"command": "backtest.robustness", "args": {"backtest_id": "bt-1"}},
     "market_risk.evaluate": {"command": "market_risk.evaluate",
                               "args": {"name": "defensive_tilt", "expression": "MKT - 0.5 * SMB",
                                         "start_date": "2025-02-03", "end_date": "2027-12-01"}},
@@ -161,7 +98,8 @@ function route(path) {
   if (clean.endsWith('/research')) return lastResearchBody && lastResearchBody.end_date === '2025-05-07'
     ? responses.research_insufficient : responses.research
   if (clean.endsWith('/summary')) return responses.summary
-  if (clean.includes('custom-risk-factor')) return responses.risk
+  if (clean.endsWith('/robustness')) return responses.robustness
+  if (clean.includes('custom-risk-factor')) return responses.market_risk
   if (/\/api\/strategy\/projects\/[^/]+$/.test(clean)) return { id: 'p1', dirty: false, current_revision: 3 }
   return null
 }
@@ -319,14 +257,18 @@ def test_factor_research_nests_its_payload_and_strips_internal_fields(tmp_path):
     envelope = driven["factor.research"]["envelope"]
     assert envelope["status"] == "succeeded"
     assert envelope["result"]["status"] == "sufficient"
-    assert envelope["result"]["periods"] == 33
+    assert envelope["result"]["periods"] == 34
     for stripped in ("source_sha256", "stdout", "stderr"):
         assert stripped not in envelope["result"], (
             f"{stripped} is removed by the tool, so no reference may claim the agent observes it"
         )
-    # Long arrays are summarised rather than passed through.
-    assert envelope["result"]["universe"]["count"] == 40
-    assert envelope["result"]["universe"]["truncated"] is True
+    # Long arrays are summarised rather than passed through. rows carries one
+    # entry per evaluated period, so it is the array this payload actually has;
+    # an earlier draft asserted a universe key the real response never returns.
+    assert envelope["result"]["rows"]["count"] == 34
+    assert envelope["result"]["rows"]["truncated"] is True
+    # Short arrays survive intact, which is why /result/warnings stays a list.
+    assert isinstance(envelope["result"]["warnings"], list)
 
 
 def test_every_blocking_tool_pointer_resolves_against_a_real_envelope(tmp_path):
